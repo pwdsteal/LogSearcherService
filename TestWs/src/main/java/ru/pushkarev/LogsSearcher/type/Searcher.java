@@ -4,7 +4,6 @@ import ru.pushkarev.LogsSearcher.utils.DateParser;
 import ru.pushkarev.LogsSearcher.utils.OsUtils;
 import ru.pushkarev.LogsSearcher.utils.Stopwatch;
 
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,7 +11,6 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ru.pushkarev.LogsSearcher.utils.DateParser.toXMLGregorianCalendar;
@@ -21,17 +19,19 @@ import static ru.pushkarev.LogsSearcher.utils.OsUtils.runAndParseOutput;
 public class Searcher {
     private static Logger log = Logger.getLogger(Searcher.class.getName());
 
-    private Query query;
+    private Request request;
     private DateParser dateParser;
 
-    public Searcher(Query query) {
-        this.query = query;
+    public Searcher(Request query) {
+        this.request = query;
     }
 
 
     public Response run() {
+        Stopwatch stopwatch = new Stopwatch();
+
         Response response = new Response();
-        for (Server server : query.getTargetServers()) {
+        for (Server server : request.getTargetServers()) {
             log.warning("Search for server " + server.getName());
             Set<File> logFilesList = selectFilesByDate(server.getLogFilesList());
             if (!logFilesList.isEmpty()) {
@@ -40,6 +40,7 @@ public class Searcher {
             }
         }
         log.warning("Searching complete.");
+        response.setSearchTime(stopwatch.getDuration());
         return response;
     }
 
@@ -47,7 +48,7 @@ public class Searcher {
         String cmd;
 
         if(OsUtils.runnningOS == OsUtils.WINDOWS) {
-            cmd = OsUtils.buildFindstrCmd(query.getSearchText(), fileList, query.isCaseSensetive(), query.isRegExp());
+            cmd = OsUtils.buildFindstrCmd(request.getSearchString(), fileList, request.isCaseSensitive(), request.isRegExp());
         } else {
             cmd = OsUtils.buildGrepCmd();
         }
@@ -57,7 +58,7 @@ public class Searcher {
 
 
     private Set<File> selectFilesByDate(Set<File> fileList) {
-        if (query.getDateIntervals().isEmpty()) {
+        if (request.getDateIntervals().isEmpty()) {
             return fileList;
         }
 
@@ -71,7 +72,7 @@ public class Searcher {
             }
             Date creationTime = new Date(attr.creationTime().toMillis());
             Date modifiedTime = new Date(attr.lastModifiedTime().toMillis());
-            for(DateInterval dateInterval : query.getDateIntervals()) {
+            for(DateInterval dateInterval : request.getDateIntervals()) {
                 if (dateInterval.getStart().before(modifiedTime) &&
                         dateInterval.getEnd().after(creationTime)) {
                     selectedFileList.add(file);
@@ -102,8 +103,8 @@ public class Searcher {
                 int currentHit = 0;
 
                 for (Block block : resultBlocks) {
-                    if(currentHit++ > query.getMaxMatches()) {
-                        log.warning("readed " + ((100.0/resultBlocks.size()*currentHit)) + " % " );
+                    if(currentHit++ > request.getMaxMatches()) {
+                        log.warning("stopped at max matches " + ((100.0/resultBlocks.size()*logBlocks.size())) + " % " );
                         break;
                     }
                     Date block_date = null;
@@ -140,7 +141,7 @@ public class Searcher {
             } catch (IOException e) {
                 log.severe(" Error at reading file " + e.getMessage() + e);
             }
-            log.warning("Reading " + resultBlocks.size() + " blocks from file " + file.getName() + "\n took " + stopwatch.stop());
+            log.warning("Readed " + logBlocks.size() + " blocks took " + stopwatch.stop());
         }
         return logBlocks;
     }
@@ -163,7 +164,7 @@ public class Searcher {
     }
 
     private boolean isDateInInterval(Date date) {
-            for (DateInterval dateInterval : query.getDateIntervals()) {
+            for (DateInterval dateInterval : request.getDateIntervals()) {
                 if (date.after(dateInterval.getStart()) && date.before(dateInterval.getEnd())) {
                     return true;
                 }

@@ -5,13 +5,22 @@ import ru.pushkarev.LogsSearcher.utils.RegExUtils;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.io.File;
+import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 //@XmlType(propOrder = { "searchString", "target", "dateIntervals", "maxMatches",  })
 @XmlRootElement
 public class Request {
+    private static Logger log = Logger.getLogger(Request.class.getName());
+    private static Path outputFolder = Domain.getPath().resolve("tmp");
+
+    private Path outputFilename;
+    private Set<Server> targetServers;
+
     @XmlElement(required = true)
     private String searchString;
 
@@ -20,14 +29,23 @@ public class Request {
     private String target;
     @XmlElement
     private List<DateInterval> dateIntervals = new ArrayList<>();
-    @XmlElement(defaultValue = "300")
+    @XmlElement
+    private String outputFormat;
+    @XmlElement(defaultValue = "65535")
     private int maxMatches = 1024;
 
     private boolean isCaseSensitive;
     private boolean isRegExp;
 
+    public Path getOutputFilename() { return outputFilename; }
 
-    public Request() {}
+    public Set<Server> getTargetServers() {
+        return targetServers;
+    }
+
+    public String getOutputFormat() { return outputFormat; }
+
+    public void setOutputFormat(String outputFormat) { this.outputFormat = outputFormat; }
 
     public String getSearchString() {
         return searchString;
@@ -79,6 +97,10 @@ public class Request {
         }
     }
 
+
+    public Request() {}
+
+
     public void validateRequest() {
         // check searchString
         if (null == searchString
@@ -96,6 +118,7 @@ public class Request {
 //            log.fine(msg);
             target = Domain.getName();
         }
+        determineTargetServers();
 
         // check dateIntervals
         if(dateIntervals.isEmpty()) {
@@ -114,6 +137,48 @@ public class Request {
         if (maxMatches <= 1) {
             maxMatches = 300;
         }
+
+        if(null != outputFormat) {
+            switch (outputFormat.toLowerCase()) {
+                case "xml": break;
+                case "html": break;
+                case "doc": break;
+                case "rtf": break;
+                default:
+                    outputFormat = null;
+            }
+        }
+
+        if(null != outputFormat) {
+            generateOutputFilePath();
+        }
+
+    }
+
+    private void determineTargetServers() {
+        targetServers = new HashSet<>();
+        if (Domain.getName().equals(target)) {
+            targetServers.addAll(Domain.getServersList());
+        }
+        else if (Domain.isCluster(target)) {
+            targetServers.addAll(Domain.getClusterByName(target).getServersList());
+        }
+        else if (Domain.isServer(target)) {
+            targetServers.add(Domain.getServerByName(target));
+        }
+        else {
+            String msg = " Cant find domain, cluster or server with name [" + target + "].\nUsing whole domain as a target.";
+            targetServers.addAll(Domain.getServersList());
+            log.log(Level.WARNING, msg);
+        }
+    }
+
+    private void generateOutputFilePath(){
+        Date dNow = new Date( );
+        SimpleDateFormat sdf = new SimpleDateFormat ("'_at_'hh-mm-ss_dd-MM-yyyy" );
+        String filename = "request_" + ServiceController.getRequestCount() + sdf.format(dNow) + "." + outputFormat;
+
+        outputFilename = outputFolder.resolve("LogsSearcher").resolve(filename);
     }
 
 }
