@@ -9,8 +9,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.sql.*;
 import java.text.ParseException;
 import java.util.*;
+import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ru.pushkarev.LogsSearcher.utils.DateParser.toXMLGregorianCalendar;
@@ -32,14 +35,14 @@ public class Searcher {
 
         Response response = new Response();
         for (Server server : request.getTargetServers()) {
-            log.warning("Search for server " + server.getName());
+            log.fine("Searching for server " + server.getName());
             Set<File> logFilesList = selectFilesByDate(server.getLogFilesList());
             if (!logFilesList.isEmpty()) {
                 ServerElement serverElement = new ServerElement(server.getName(), readBlocks(searchByOS(logFilesList)));
                 response.addServerElement(serverElement);
             }
         }
-        log.warning("Searching complete.");
+        log.fine("Searching complete.");
         response.setSearchTime(stopwatch.getDuration());
         return response;
     }
@@ -89,22 +92,21 @@ public class Searcher {
         Set<LogBlock> logBlocks = new LinkedHashSet<>();
 
         for (File file : filesWithHits.keySet()) {
-            log.warning("reading blocks from file " + file.getName());
+            log.finer("reading blocks from file " + file.getName());
             Stopwatch stopwatch = new Stopwatch();
 
             Set<Block> resultBlocks = Block.getBlocksToRead(filesWithHits.get(file), blockStartList.get(file));
-            log.warning(resultBlocks.size() + " blocks selected");
+            log.finer(resultBlocks.size() + " blocks selected");
 
             dateParser = new DateParser();  // create new instance for each file. Each Log file may have different time format
             try (BufferedReader reader = new BufferedReader( new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-
                 String line;
                 int lineNumber = 1;  // findstr starts count at 1
                 int currentHit = 0;
 
                 for (Block block : resultBlocks) {
                     if(currentHit++ > request.getMaxMatches()) {
-                        log.warning("stopped at max matches " + ((100.0/resultBlocks.size()*logBlocks.size())) + " % " );
+                        log.finer("stopped at max matches " + ((100.0/resultBlocks.size()*logBlocks.size())) + " % " );
                         break;
                     }
                     Date block_date = null;
@@ -114,17 +116,19 @@ public class Searcher {
                         lineNumber++;
                     }
                     // read block
-                    StringBuilder buffer = new StringBuilder();
+                    StringBuilder buffer = null;
                     try {
                         while (lineNumber <= block.getEnd() && (line = reader.readLine()) != null) {
                             if(lineNumber++ == block.getStart()) {
                                 block_date = extractDateFromBlock(line);
+                                // if block doesn't match dates range, skip it
+                                if(isDateInInterval(block_date)) {
+                                    buffer = new StringBuilder(line.length() + 4);
+                                } else {
+                                    break;
+                                }
                             }
 
-                            // if block doesn't match dates range, skip it
-                            if(!isDateInInterval(block_date)) {
-                                break;
-                            }
                             // continue build block
                             if(buffer.length() > 0) {
                                 buffer.append(line);
@@ -136,30 +140,34 @@ public class Searcher {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    logBlocks.add(new LogBlock(toXMLGregorianCalendar(block_date), buffer.toString()));
+                    if (buffer != null) {
+                        logBlocks.add(new LogBlock(toXMLGregorianCalendar(block_date), buffer.toString()));
+                    }
                 }
             } catch (IOException e) {
-                log.severe(" Error at reading file " + e.getMessage() + e);
+                log.log(Level.WARNING, " Error at reading file " + e.getMessage() + e);
             }
-            log.warning("Readed " + logBlocks.size() + " blocks took " + stopwatch.stop());
+            log.fine("Readed " + logBlocks.size() + " blocks took " + stopwatch.stop());
         }
         return logBlocks;
     }
 
     private Date extractDateFromBlock(String text) {
-        Date date = null;
+        Date date;
         String dateTimeString = null;
         try {
             dateTimeString = text.substring(text.indexOf('<')+1, text.indexOf('>'));
         } catch (Exception e) {
-            log.warning("Date extracting error :" + text + e.getMessage());
+            log.log(Level.WARNING, "Date extracting error :" + text + e.getMessage());
+            date = new Date();
         }
-
         try {
             date = dateParser.parse(dateTimeString);
         } catch (ParseException e) {
-            log.warning("Date parsing error :" + e.getMessage());
+            log.log(Level.WARNING, "Date parsing error :" + e.getMessage());
+            date = new Date();
         }
+
         return date;
     }
 

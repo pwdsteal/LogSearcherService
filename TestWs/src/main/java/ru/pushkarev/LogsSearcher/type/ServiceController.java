@@ -14,29 +14,30 @@ import java.util.concurrent.Executors;
 public class ServiceController {
     private static final int MAX_THREADS = 5;
     private static int requestCount = 1;
-    static ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREADS);
+    private static ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREADS);
+
 
     public static int getRequestCount() {
         return requestCount;
     }
 
-
     @Lock(LockType.READ)
     public Response processRequest(Request request) {
         request.validateRequest();
+        requestCount++;
 
-        // run synchronized This thread
+        // run synchronized in This thread
         if(null == request.getOutputFormat()) {
             return new Searcher(request).run();
         } else {
             // run asynchronous, in a separate thread
             queueRequest(request);
-            return new Response(request.getOutputFilename().toUri());
+            return new Response(request.getResultFilename());
         }
     }
 
     public void queueRequest(Request request) {
-        threadPool.submit(new WorkerThread(request, requestCount++));
+        threadPool.submit(new WorkerThread(request));
     }
 
 

@@ -1,5 +1,6 @@
 package ru.pushkarev.LogsSearcher.type;
 
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.Date;
 

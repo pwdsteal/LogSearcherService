@@ -1,46 +1,45 @@
 package ru.pushkarev.LogsSearcher.type;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 @XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Response {
 
     @XmlElement
-    private URI fileURI;
+    private String filename;
 
-    public URI getFileURI() { return fileURI; }
+    public String getFilename() { return filename; }
 
-    public void setFileURI(URI fileURI) { this.fileURI = fileURI; }
+    public void setFilename(String filename) { this.filename = filename; }
 
     @XmlAttribute
     private long searchTime;
 
-    @XmlElement
-    private List<ServerElement> server;
+    @XmlElement(name = "server")
+    private List<ServerElement> servers;
 
-    public List<ServerElement> getServer() {
-        return server;
+    public List<ServerElement> getServers() {
+        return servers;
     }
 
-    public void setServer(List<ServerElement> server) {
-        this.server = server;
+    public void setServers(List<ServerElement> servers) {
+        this.servers = servers;
     }
 
     public Response() {
-        server = new ArrayList<>();
+        servers = new ArrayList<>();
     }
 
-    public Response(URI fileURI) {
-        this.fileURI = fileURI;
+    public Response(String filename) {
+        this.filename = filename;
     }
 
     public void addServerElement(ServerElement serverElement) {
-        this.server.add(serverElement);
+        this.servers.add(serverElement);
     }
 
     public long getSearchTime() {

@@ -2,6 +2,7 @@ package ru.pushkarev.LogsSearcher.utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -38,8 +39,7 @@ public class RegExUtils {
         try {
             Pattern.compile(searchText);  // test if expression is valid
         } catch (PatternSyntaxException e) {
-            String msg = "Invalid RegExp syntax :" + e.getMessage();
-            log.severe(msg);
+            log.log(Level.WARNING, "Invalid RegExp syntax :" + e.getMessage());
 //            throw new PatternSyntaxException(msg, searchText, 0);
             return false;
         }

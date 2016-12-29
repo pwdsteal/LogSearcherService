@@ -6,6 +6,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -45,7 +46,7 @@ public final class DateParser {
         put("^\\d{1,2}\\s[a-z]{4,}\\s\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd MMMM yyyy HH:mm:ss");
     }};
 
-    public DateParser() { };
+    public DateParser() { }
 
     public Date parse(String dateString) throws ParseException {
         if (isFirstParse) {
@@ -108,7 +109,7 @@ public final class DateParser {
         try {
             xmlCalendar = DatatypeFactory.newInstance().newXMLGregorianCalendar(gCalendar);
         } catch (DatatypeConfigurationException ex) {
-            log.severe(ex.getMessage() + ex);
+            log.log(Level.WARNING, "Error converting Date to XMLGregorianCalendar\n" + ex.getMessage() + ex);
         }
         return xmlCalendar;
     }

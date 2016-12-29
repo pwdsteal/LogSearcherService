@@ -35,12 +35,18 @@ public class OsUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        log.warning("Parsing output for cmd:" + cmd);
+        log.info("Parsing output for cmd:" + cmd);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         Stopwatch stopwatch = new Stopwatch();
         try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             if(!reader.ready()) {
-                log.fine("findstr returned nothing. cmd:" + cmd);
+                log.info("findstr returned nothing. cmd:" + cmd);
+                return filesWithHits;
             }
 
             String line;
@@ -56,12 +62,12 @@ public class OsUtils {
                 try {
                     filePath = line.substring(0, line.indexOf(':', 3));  // begin index is > 2 to skip match of "C:\"
                 } catch (IndexOutOfBoundsException e) {
-                    log.warning("findstr returned unexpected string:" + line + "\n" + e.getMessage() + e);
+                    log.log(Level.WARNING, "findstr returned unexpected string:" + line + "\n" + e.getMessage() + e);
                 }
                 try {
                     lineNumber = Integer.parseInt(line.substring(filePath.length()+1, line.indexOf(':', filePath.length()+1)));
                 } catch (Exception e) {
-                    log.warning("Failed to parse filename and line number from result line of findstr:" + line + "\n" + e.getMessage() + e);
+                    log.log(Level.WARNING, "Failed to parse filename and line number from result line of findstr:" + line + "\n" + e.getMessage() + e);
                 }
 
                 if(file == null) {
@@ -83,8 +89,8 @@ public class OsUtils {
                 if (!reader.ready()) {
                     filesWithHits.put(file, lineNumbers);
                 }
-                if(++i % 100000 == 0) {
-                    log.warning("Still parsing... iteration :" + i);
+                if(++i % 1000000 == 0) {
+                    log.info("Still parsing... iteration :" + i);
                 }
             }
 
@@ -92,7 +98,7 @@ public class OsUtils {
             log.log(Level.SEVERE, e.getMessage() + e);
 
         }
-        log.warning("took " + stopwatch.stop());
+        log.fine(" took " + stopwatch.stop());
 
         return filesWithHits;
     }
@@ -117,7 +123,7 @@ public class OsUtils {
             try {
                 cmd += " \"" + file.getCanonicalPath() + "\"";
             } catch (IOException e) {
-                log.warning("Cannot get canonical path for file:" + file.getName() + "\n" + e.getMessage() + e);
+                log.log(Level.WARNING, "Cannot get canonical path for file:" + file.getName() + "\n" + e.getMessage() + e);
             }
         }
         return cmd;

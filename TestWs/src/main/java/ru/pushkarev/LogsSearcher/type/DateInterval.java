@@ -12,8 +12,7 @@ public class DateInterval {
     private XMLGregorianCalendar startXMLGC;
     private XMLGregorianCalendar endXMLGC;
 
-    public DateInterval(){
-    }
+    public DateInterval(){}
 
     public DateInterval(XMLGregorianCalendar startXMLGC, XMLGregorianCalendar endXMLGC) {
         this.startXMLGC = startXMLGC;

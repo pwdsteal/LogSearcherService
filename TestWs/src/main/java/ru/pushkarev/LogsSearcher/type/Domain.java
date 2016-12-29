@@ -59,7 +59,7 @@ public class Domain {
             if(cluster.getName().equals(name))
                 return cluster;
         }
-        log.severe(" Cant find cluster by name : " + name);
+        log.info(" Cant find cluster by name : " + name);
         return new Cluster();
     }
 
@@ -67,7 +67,7 @@ public class Domain {
         for (Server server: serversList  ) {
             if(server.getName().equals(name)) return server;
         }
-        log.severe(" Cant find server by name : " + name);
+        log.info(" Cant find server by name : " + name);
         return new Server();
     }
 
