@@ -3,6 +3,7 @@ package ru.pushkarev.LogsSearcher.utils;
 import org.apache.fop.apps.*;
 import ru.pushkarev.LogsSearcher.type.*;
 
+import javax.ejb.EJB;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -19,26 +20,6 @@ import java.util.logging.Logger;
 
 public class FileConverter {
     private static Logger log = Logger.getLogger(FileConverter.class.getName());
-
-    private static File XSLT_HTML_FILE = new File("C:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\new_domain\\tmp\\LogsSearcher\\toHTML.xsl");
-//    private static File XSLT_HTML_FILE = new File("src/main/resources/toHTML.xsl");
-    private static File XSLT_DOC_FILE = new File("C:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\new_domain\\tmp\\LogsSearcher\\toDoc.xsl");
-//    private static File XSLT_DOC_FILE = new File("src/main/resources/toDoc.xsl");
-    private static File XSLT_PDF_RTF_FILE = new File("C:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\new_domain\\tmp\\LogsSearcher\\toPDF.xsl");
-//    private static File XSLT_PDF_RTF_FILE = new File("src/main/resources/toPDF.xsl");
-
-    static {
-        if(XSLT_HTML_FILE == null || !XSLT_HTML_FILE.isFile()) {
-            log.warning("Cannot find XSLT_HTML_FILE template");
-            // use default from resources
-        }
-        if(XSLT_DOC_FILE == null || !XSLT_DOC_FILE.isFile()) {
-            log.warning("Cannot find XSLT_DOC_FILE template");
-        }
-        if(XSLT_PDF_RTF_FILE == null || !XSLT_PDF_RTF_FILE.isFile()) {
-            log.warning("Cannot find XSLT_PDF_RTF_FILE template");
-        }
-    }
 
     private FileConverter() {}
 
@@ -93,7 +74,7 @@ public class FileConverter {
 
             // Setup XSLT
             TransformerFactory factory = TransformerFactory.newInstance();
-            Transformer transformer = factory.newTransformer(new StreamSource(XSLT_PDF_RTF_FILE));
+            Transformer transformer = factory.newTransformer(new StreamSource(Config.getInstance().getXML_TO_PDF_TEMPLATE()));
 
             // Resulting SAX events (the generated FO) must be piped through to
             Result res = new SAXResult(fop.getDefaultHandler());
@@ -118,10 +99,10 @@ public class FileConverter {
         File xsltTemplate = null;
         switch (outputFormat) {
             case "html":
-                xsltTemplate = XSLT_HTML_FILE;
+                xsltTemplate = Config.getInstance().getXML_TO_HTML_TEMPLATE();
                 break;
             case "doc":
-                xsltTemplate = XSLT_DOC_FILE;
+                xsltTemplate = Config.getInstance().getXML_TO_DOC_TEMPLATE();
                 break;
         }
 

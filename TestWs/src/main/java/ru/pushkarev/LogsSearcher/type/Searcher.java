@@ -25,8 +25,8 @@ public class Searcher {
     private Request request;
     private DateParser dateParser;
 
-    public Searcher(Request query) {
-        this.request = query;
+    public Searcher(Request request) {
+        this.request = request;
     }
 
 

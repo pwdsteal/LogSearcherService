@@ -1,11 +1,15 @@
 package ru.pushkarev.LogsSearcher.type;
 
+import ru.pushkarev.LogsSearcher.utils.Config;
+
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-
+@Stateless
 public class ServerElement {
 
     @XmlAttribute
@@ -19,6 +23,5 @@ public class ServerElement {
         this.logBlocks = logBlocks;
     }
 
-    public ServerElement() {
-    }
+    public ServerElement() {}
 }

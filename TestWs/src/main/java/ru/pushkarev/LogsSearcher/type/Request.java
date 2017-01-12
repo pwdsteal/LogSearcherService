@@ -1,16 +1,19 @@
 package ru.pushkarev.LogsSearcher.type;
 
+import ru.pushkarev.LogsSearcher.utils.Config;
 import ru.pushkarev.LogsSearcher.utils.DateParser;
 import ru.pushkarev.LogsSearcher.utils.RegExUtils;
 
+import javax.annotation.Resource;
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.*;
-import java.io.File;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @XmlType(propOrder = { "searchString", "target", "outputFormat", "dateIntervals", "maxMatches", "isCaseSensitive", "isRegExp" })
@@ -18,8 +21,6 @@ import java.util.logging.Logger;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Request {
     private static Logger log = Logger.getLogger(Request.class.getName());
-    private static Path outputFolder = Domain.getPath().resolve("tmp");
-
 
     @XmlElement(required = true, defaultValue = "error")
     @NotNull @Size(min = 3)
@@ -33,11 +34,13 @@ public class Request {
     @XmlElement(defaultValue = " ")
     private String outputFormat;
     @XmlElement(defaultValue = "65535")
-    private int maxMatches = 1024;
+    private int maxMatches = 65535;
     @XmlElement(defaultValue = "false")
     private boolean isCaseSensitive;
     @XmlElement(defaultValue = "false")
     private boolean isRegExp;
+
+
 
     // not visible
     @XmlTransient
@@ -113,7 +116,7 @@ public class Request {
         // check target
         if (null == target || target.isEmpty()) {
             log.info("Target not specified. Using whole domain as a target.");
-            target = Domain.getName();
+            target = Domain.getInstance().getName();
         }
         determineTargetServers();
 
@@ -125,7 +128,7 @@ public class Request {
         } else {
             String dates = "";
             for (DateInterval dateInterval : dateIntervals) {
-                dates += "\nstart:" + dateInterval.getStartXMLGC() + " end:" + dateInterval.getEndXMLGC();
+                dates += "\n\tstart:" + dateInterval.getStartXMLGC() + " end:" + dateInterval.getEndXMLGC();
             }
             log.info("Dates presented:" + dates);
         }
@@ -141,7 +144,7 @@ public class Request {
             maxMatches = 300;
         }
 
-        if(null != outputFormat) {
+            if(null != outputFormat) {
             switch (outputFormat.toLowerCase()) {
                 case "xml":
                 case "html":
@@ -162,28 +165,53 @@ public class Request {
 
     }
 
+
     private void determineTargetServers() {
         targetServers = new HashSet<>();
-        if (Domain.getName().equals(target)) {
-            targetServers.addAll(Domain.getServersList());
+        if (target.equals(Domain.getInstance().getName())) {
+            targetServers.addAll(Domain.getInstance().getServersList());
         }
-        else if (Domain.isCluster(target)) {
-            targetServers.addAll(Domain.getClusterByName(target).getServersList());
+        else if (Domain.getInstance().isCluster(target)) {
+            targetServers.addAll(Domain.getInstance().getClusterByName(target).getServersList());
         }
-        else if (Domain.isServer(target)) {
-            targetServers.add(Domain.getServerByName(target));
+        else if (Domain.getInstance().isServer(target)) {
+            targetServers.add(Domain.getInstance().getServerByName(target));
         }
         else {
             log.info("Cant find domain, cluster or server with name [" + target + "].\nUsing whole domain as a target.");
-            targetServers.addAll(Domain.getServersList());
+            targetServers.addAll(Domain.getInstance().getServersList());
         }
     }
 
     private void generateOutputFilePath(){
         Date dNow = new Date( );
         SimpleDateFormat sdf = new SimpleDateFormat ("'_at_'HH-mm-ss_dd-MM-yyyy" );
-        String filename = "request_" + ServiceController.getRequestCount() + sdf.format(dNow);
+        String filename = ServiceController.getRequestCount() + "hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
         outputFilename = filename;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Request request = (Request) o;
+
+        if (isCaseSensitive != request.isCaseSensitive) return false;
+        if (isRegExp != request.isRegExp) return false;
+        if (!searchString.equals(request.searchString)) return false;
+        if (target != null ? !target.equals(request.target) : request.target != null) return false;
+        return dateIntervals != null ? dateIntervals.equals(request.dateIntervals) : request.dateIntervals == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = searchString.hashCode();
+        result = 31 * result + (target != null ? target.hashCode() : 0);
+        result = 31 * result + (dateIntervals != null ? dateIntervals.hashCode() : 0);
+        result = 31 * result + (isCaseSensitive ? 1 : 0);
+        result = 31 * result + (isRegExp ? 1 : 0);
+        return result;
+    }
 }

@@ -123,7 +123,7 @@ public class OsUtils {
             try {
                 cmd += " \"" + file.getCanonicalPath() + "\"";
             } catch (IOException e) {
-                log.log(Level.WARNING, "Cannot get canonical path for file:" + file.getName() + "\n" + e.getMessage() + e);
+                log.log(Level.WARNING, "Cannot get canonical domainPath for file:" + file.getName() + "\n" + e.getMessage() + e);
             }
         }
         return cmd;

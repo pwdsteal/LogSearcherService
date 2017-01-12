@@ -4,44 +4,54 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import ru.pushkarev.LogsSearcher.utils.Config;
 
-import javax.ejb.Singleton;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@Singleton
+
 public class Domain {
     private static Logger log = Logger.getLogger(Domain.class.getName());
 
-    private static String name;
+    private static Domain instance;
+    public static synchronized Domain getInstance(){
+        if(instance == null){
+            instance = new Domain();
+        }
+        return instance;
+    }
 
-    public static Path path = Paths.get(System.getProperty("user.dir")); // use at release
-    private static Set<Cluster> clustersList = new HashSet<>();
-    private static Set<Server> serversList = new HashSet<>();
-
-    static {
+    private Domain() {
         parseConfigXml();
     }
 
-    public static String getName() { return name; }
-    public static Path getPath() { return path; }
-    public static Set<Cluster> getClustersList() { return clustersList; }
-    public static Set<Server> getServersList() { return serversList; }
+
+    private String name;
+    private Set<Cluster> clustersList = new HashSet<>();
+    private Set<Server> serversList = new HashSet<>();
 
 
-    private static void addCluster(Cluster cluster) {
+    public String getName() { return name; }
+    public Set<Cluster> getClustersList() { return clustersList; }
+    public Set<Server> getServersList() { return serversList; }
+
+
+    private void addCluster(Cluster cluster) {
         clustersList.add(cluster);
     }
 
+
+
+
+
     /** Checks existing cluster or create new one */
-    public static Cluster getClusterInstance(String name) {
+    public Cluster getClusterInstance(String name) {
         // Find existing cluster
         for (Cluster cluster : clustersList  ) {
             if (cluster.getName().equals(name))
@@ -54,7 +64,7 @@ public class Domain {
         return cluster;
     }
 
-    public static Cluster getClusterByName(String name) {
+    public Cluster getClusterByName(String name) {
         for (Cluster cluster: clustersList) {
             if(cluster.getName().equals(name))
                 return cluster;
@@ -63,7 +73,7 @@ public class Domain {
         return new Cluster();
     }
 
-    public static Server getServerByName(String name) {
+    public Server getServerByName(String name) {
         for (Server server: serversList  ) {
             if(server.getName().equals(name)) return server;
         }
@@ -71,7 +81,7 @@ public class Domain {
         return new Server();
     }
 
-    public static boolean isCluster(String name) {
+    public boolean isCluster(String name) {
         for(Cluster cluster : clustersList) {
             if(cluster.getName().equals(name))
                 return true;
@@ -79,7 +89,7 @@ public class Domain {
         return false;
     }
 
-    public static boolean isServer(String name) {
+    public boolean isServer(String name) {
         for(Server server : serversList) {
             if(server.getName().equals(name))
                 return true;
@@ -92,9 +102,9 @@ public class Domain {
      * Reads config.xml
      * Builds Domain Structure
      */
-    private static void parseConfigXml() {
+    public void parseConfigXml() {
         // Reading config.xml
-        Path configPath = path.resolve("config").resolve("config.xml");
+        Path configPath = Config.getInstance().domainPath.resolve("config").resolve("config.xml");
         Document doc;
         try {
             File fXmlFile = new File(configPath.toString());
@@ -140,7 +150,7 @@ public class Domain {
                 serversList.add(server);
             }
         }
+        log.info("Domain structure build done.");
     }
-
 
 }

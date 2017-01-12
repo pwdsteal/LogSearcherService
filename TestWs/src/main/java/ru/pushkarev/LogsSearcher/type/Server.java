@@ -1,10 +1,12 @@
 package ru.pushkarev.LogsSearcher.type;
 
+import ru.pushkarev.LogsSearcher.utils.Config;
+
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 
@@ -27,17 +29,9 @@ public class Server {
         this.cluster = cluster;
         cluster.addServer(this);
 
-        this.path = Domain.getPath().resolve("servers").resolve(this.name);
+        this.path = Config.getInstance().domainPath.resolve("servers").resolve(this.name);
     }
 
-    public void printServerInfo() {
-        System.out.println("name : " + name);
-        System.out.println("machine : " + machine);
-        System.out.println("listen-port : " + port);
-        System.out.println("cluster : " + cluster.getName());
-        System.out.println("path : " + path.toString());
-        System.out.println();
-    }
 
     public Set<File> getLogFilesList() {
         Set<File> filesList = new HashSet<>();
@@ -47,7 +41,7 @@ public class Server {
         for (File file : files) {
             if (file.isFile() &&
                     file.getName().contains(this.name + ".log") ||
-                    file.getName().contains(Domain.getName() + ".log")) {  // add %domain_name% logs
+                    file.getName().contains(Domain.getInstance().getName() + ".log")) {  // add %domain_name% logs
 
                 filesList.add(file);
             }
