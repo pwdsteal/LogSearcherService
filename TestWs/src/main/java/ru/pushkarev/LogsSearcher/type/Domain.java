@@ -47,20 +47,23 @@ public class Domain {
     }
 
     public static Set<Server> getTargetServers(Request request) {
-        String target = request.getTarget();
-
         Set<Server> targetServers = new HashSet<>();
-        if (target.equals(Domain.getInstance().getName())) {
-            targetServers.addAll(Domain.getInstance().getServersList());
+
+        for (String target : request.getTarget().split(",")) {
+            target = target.trim();
+            if (target.equalsIgnoreCase(Domain.getInstance().getName())) {
+                targetServers.addAll(Domain.getInstance().getServersList());
+            } else if (Domain.getInstance().isCluster(target)) {
+                targetServers.addAll(Domain.getInstance().getClusterByName(target).getServersList());
+            } else if (Domain.getInstance().isServer(target)) {
+                targetServers.add(Domain.getInstance().getServerByName(target));
+            } else {
+                log.info("Invalid entity : " + target);
+            }
         }
-        else if (Domain.getInstance().isCluster(target)) {
-            targetServers.addAll(Domain.getInstance().getClusterByName(target).getServersList());
-        }
-        else if (Domain.getInstance().isServer(target)) {
-            targetServers.add(Domain.getInstance().getServerByName(target));
-        }
-        else {
-            log.info("Cant find domain, cluster or server with name [" + target + "]. Using whole domain as a target.");
+
+        if(targetServers.isEmpty()) {
+            log.info("Cant find domain, cluster or server with given names [" + request.getTarget() + "]. Using whole domain as a target.");
             targetServers.addAll(Domain.getInstance().getServersList());
         }
 
@@ -73,7 +76,7 @@ public class Domain {
     public Cluster getClusterInstance(String name) {
         // Find existing cluster
         for (Cluster cluster : clustersList  ) {
-            if (cluster.getName().equals(name))
+            if (cluster.getName().equalsIgnoreCase(name))
                 return cluster;
         }
         // Create new cluster
@@ -85,7 +88,7 @@ public class Domain {
 
     public Cluster getClusterByName(String name) {
         for (Cluster cluster: clustersList) {
-            if(cluster.getName().equals(name))
+            if(cluster.getName().equalsIgnoreCase(name))
                 return cluster;
         }
         log.info(" Cant find cluster by name : " + name);
@@ -94,7 +97,7 @@ public class Domain {
 
     public Server getServerByName(String name) {
         for (Server server: serversList  ) {
-            if(server.getName().equals(name)) return server;
+            if(server.getName().equalsIgnoreCase(name)) return server;
         }
         log.info(" Cant find server by name : " + name);
         return new Server();
@@ -102,7 +105,7 @@ public class Domain {
 
     public boolean isCluster(String name) {
         for(Cluster cluster : clustersList) {
-            if(cluster.getName().equals(name))
+            if(cluster.getName().equalsIgnoreCase(name))
                 return true;
         }
         return false;
@@ -110,7 +113,7 @@ public class Domain {
 
     public boolean isServer(String name) {
         for(Server server : serversList) {
-            if(server.getName().equals(name))
+            if(server.getName().equalsIgnoreCase(name))
                 return true;
         }
         return false;

@@ -57,6 +57,11 @@ public class DateInterval {
     }
 
     @Override
+    public String toString() {
+        return  "\n\t" + startXMLGC + " - " + endXMLGC;
+    }
+
+    @Override
     public int hashCode() {
         int result = startXMLGC.hashCode();
         result = 31 * result + endXMLGC.hashCode();

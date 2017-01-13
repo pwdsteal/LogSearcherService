@@ -23,11 +23,12 @@ public class Request {
     @NotNull @Size(min = 3)
     private String searchString;
 
+
     // optional parameters
     @XmlElement(defaultValue = "domain")
     private String target;
     @XmlElement
-    private List<DateInterval> dateIntervals = new ArrayList<>();
+    private Set<DateInterval> dateIntervals = new HashSet<>();
     @XmlElement(defaultValue = " ")
     private String outputFormat;
     @XmlElement(defaultValue = "65535")
@@ -97,9 +98,9 @@ public class Request {
         this.target = target;
     }
 
-    public List<DateInterval> getDateIntervals() { return dateIntervals; }
+    public Set<DateInterval> getDateIntervals() { return dateIntervals; }
 
-    public void setDateIntervals(List<DateInterval> dateIntervals) { this.dateIntervals = dateIntervals; }
+    public void setDateIntervals(Set<DateInterval> dateIntervals) { this.dateIntervals = dateIntervals; }
 
     public boolean isRegExp() {
         return isRegExp;
@@ -143,12 +144,6 @@ public class Request {
             dateIntervals.add(new DateInterval(
                     DateParser.toXMLGregorianCalendar(new Date(0)),
                     DateParser.toXMLGregorianCalendar(new Date())));
-        } else {
-            String dates = "";
-            for (DateInterval dateInterval : dateIntervals) {
-                dates += "\n\tstart:" + dateInterval.getStartXMLGC() + " end:" + dateInterval.getEndXMLGC();
-            }
-            log.info("Dates presented:" + dates);
         }
 
         // Check RegExpression
@@ -184,8 +179,6 @@ public class Request {
     }
 
     private void tryFindCached() {
-        Stopwatch stopwatch = new Stopwatch();
-
         cachedFile = CacheService.tryFindCachedFile(this);
         if (null != cachedFile) {
             isCached = true;
@@ -194,9 +187,8 @@ public class Request {
                 isCacheExtensionMatch = true;
                 msg += ". Extension matches: true" ;
             }
-            log.info(msg + stopwatch.stop());
+            log.info(msg);
         }
-
     }
 
     private void generateFilename(){
@@ -204,6 +196,20 @@ public class Request {
         SimpleDateFormat sdf = new SimpleDateFormat ("'_at_'HH-mm-ss_dd-MM-yyyy" );
         String filename = ServiceController.getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
         outputFilename = filename;
+    }
+
+    @Override
+    public String toString() {
+        return "\nRequest{" +
+                "searchString='" + searchString + '\'' +
+                ", target='" + target + '\'' +
+                ", dateIntervals=" + dateIntervals +
+                ", outputFormat='" + outputFormat + '\'' +
+                ", maxMatches=" + maxMatches +
+                ", isCaseSensitive=" + isCaseSensitive +
+                ", isRegExp=" + isRegExp +
+                ", isCached=" + isCached +
+                '}';
     }
 
     @Override

@@ -42,7 +42,7 @@ public class Searcher {
                 response.addServerElement(serverElement);
             }
         }
-        log.fine("Searching complete.");
+        log.info("Searching complete. " + stopwatch.stop());
 
         // save to cache
         // TODO GET PATH

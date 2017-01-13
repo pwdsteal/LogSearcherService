@@ -111,7 +111,6 @@ public class CacheService {
 
     private boolean isOurExtension(String fileName) {
         fileName = fileName.toLowerCase();
-        fileName.equals("XML_TO_DOC_TEMPLATE.xsl");
         for (String extension : extensions) {
             if(fileName.endsWith(extension) && fileName.contains("hashcode")) {
                 return true;

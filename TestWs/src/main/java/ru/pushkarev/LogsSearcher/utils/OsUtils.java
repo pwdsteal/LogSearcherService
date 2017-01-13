@@ -23,8 +23,7 @@ public class OsUtils {
     }
 
 
-    private OsUtils() {
-    }
+    private OsUtils() {}
 
     public static Map<File, List<Integer>> runAndParseOutput(String cmd) {
         Map<File, List<Integer>> filesWithHits = new HashMap<>();
@@ -36,18 +35,10 @@ public class OsUtils {
             e.printStackTrace();
         }
         log.info("Parsing output for cmd:" + cmd);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
 
         Stopwatch stopwatch = new Stopwatch();
         try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            if(!reader.ready()) {
-                log.info("findstr returned nothing. cmd:" + cmd);
-                return filesWithHits;
-            }
 
             String line;
             File file = null;
@@ -93,6 +84,7 @@ public class OsUtils {
                     log.info("Still parsing... line :" + i);
                 }
             }
+//            process.waitFor();
 
         } catch (IOException e) {
             log.log(Level.SEVERE, e.getMessage() + e);
