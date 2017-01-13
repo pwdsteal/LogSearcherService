@@ -1,12 +1,14 @@
 package ru.pushkarev.LogsSearcher.utils;
 
 import org.apache.fop.apps.*;
+import ru.pushkarev.LogsSearcher.schedule.CacheService;
 import ru.pushkarev.LogsSearcher.type.*;
 
 import javax.ejb.EJB;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.*;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamResult;
@@ -29,20 +31,41 @@ public class FileConverter {
         log.setLevel(Level.ALL);
     }
 
-    public static void writeXMLToFile(Response response, File file) throws JAXBException, IOException {
-
+    public static void writeResponseToXML(Response response, File file)  {
         file.getParentFile().mkdirs();
-        if (file.createNewFile()) {
-            log.info("File created: " + file.getName());
+        try {
+            if (file.createNewFile()) {
+                log.info("File created: " + file.getName());
+            }
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Error creating XML file. domainPath: " + file.getAbsolutePath() + "\n" + e.getMessage() + e);
+            throw new RuntimeException();
         }
 
         Stopwatch stopwatch = new Stopwatch();
-        JAXBContext jaxbContext = JAXBContext.newInstance(Response.class);
-        Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-
-        jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-        jaxbMarshaller.marshal(response, file);
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(Response.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            jaxbMarshaller.marshal(response, file);
+        } catch (JAXBException e) {
+            log.log(Level.SEVERE, "Error converting response object to XML file " + e.getMessage() + e);
+            throw new RuntimeException();
+        }
         log.info("xml file conversion complete.  " + stopwatch.stop());
+        CacheService.addFileToCache(file);
+    }
+
+    public static Response readResponseFromXML(File file) {
+        Response response = null;
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(Response.class);
+            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+            response = (Response) jaxbUnmarshaller.unmarshal(file);
+        } catch (JAXBException e) {
+            e.printStackTrace();
+        }
+        return response;
     }
 
 

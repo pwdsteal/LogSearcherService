@@ -44,4 +44,22 @@ public class DateInterval {
     public Date getStart() { return DateParser.toDate(startXMLGC); }
     public Date getEnd() {   return DateParser.toDate(endXMLGC); }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DateInterval that = (DateInterval) o;
+
+        if (!startXMLGC.equals(that.startXMLGC)) return false;
+        return endXMLGC.equals(that.endXMLGC);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = startXMLGC.hashCode();
+        result = 31 * result + endXMLGC.hashCode();
+        return result;
+    }
 }

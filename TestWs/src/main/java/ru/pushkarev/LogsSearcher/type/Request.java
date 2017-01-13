@@ -1,17 +1,14 @@
 package ru.pushkarev.LogsSearcher.type;
 
-import ru.pushkarev.LogsSearcher.utils.Config;
+import ru.pushkarev.LogsSearcher.schedule.CacheService;
 import ru.pushkarev.LogsSearcher.utils.DateParser;
 import ru.pushkarev.LogsSearcher.utils.RegExUtils;
+import ru.pushkarev.LogsSearcher.utils.Stopwatch;
 
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.*;
-import java.nio.file.Path;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
@@ -41,21 +38,43 @@ public class Request {
     private boolean isRegExp;
 
 
-
-    // not visible
-    @XmlTransient
-    private Set<Server> targetServers;
     @XmlTransient
     private String outputFilename;
+    @XmlTransient
+    private File cachedFile;
+    @XmlTransient
+    private boolean isFileRequested;
+    @XmlTransient
+    private boolean isCached;
+    @XmlTransient
+    private boolean isCacheExtensionMatch;
+
+    public boolean isFileRequested() {return isFileRequested;}
+
+    public boolean isCached() {return isCached;}
+
+    public boolean isCacheExtensionMatch() {return isCacheExtensionMatch;}
+
+    public File getCachedFile() {
+        return cachedFile;
+    }
 
     public String getOutputFilename() {return outputFilename;}
 
-    public String getResultFilename() {
-        return outputFilename + "." + outputFormat.toLowerCase();
-    }
+//    public String getResultFilename() {
+//        return outputFilename + "." + outputFormat;
+//    }
 
-    public Set<Server> getTargetServers() {
-        return targetServers;
+    public String getResultFilename() {
+        if (isCached) {
+            if (isCacheExtensionMatch) {
+                return cachedFile.getName();  // return existing file
+            } else {
+                return cachedFile.getName().replace(".xml", + '.' + outputFormat);  // use cache xml to gen new file
+            }
+        } else {
+            return outputFilename + "." + outputFormat;  // create new file
+        }
     }
 
     public String getOutputFormat() { return outputFormat; }
@@ -118,7 +137,6 @@ public class Request {
             log.info("Target not specified. Using whole domain as a target.");
             target = Domain.getInstance().getName();
         }
-        determineTargetServers();
 
         // check dateIntervals
         if(dateIntervals.isEmpty()) {
@@ -141,7 +159,7 @@ public class Request {
 
         // check maxMatches
         if (maxMatches <= 1) {
-            maxMatches = 300;
+            maxMatches = 65535;
         }
 
             if(null != outputFormat) {
@@ -152,6 +170,7 @@ public class Request {
                 case "rtf":
                 case "pdf":
                     outputFormat = outputFormat.toLowerCase();
+                    isFileRequested = true;
                     break;
                 default:
                     log.fine("Incorrect output file format: " + outputFormat);
@@ -159,34 +178,31 @@ public class Request {
             }
         }
 
-        if(null != outputFormat) {
-            generateOutputFilePath();
+        generateFilename();
+
+        tryFindCached();
+    }
+
+    private void tryFindCached() {
+        Stopwatch stopwatch = new Stopwatch();
+
+        cachedFile = CacheService.tryFindCachedFile(this);
+        if (null != cachedFile) {
+            isCached = true;
+            String msg = "Found cached File: " + cachedFile.getName();
+            if (cachedFile.getName().toLowerCase().endsWith('.' + outputFormat)) {
+                isCacheExtensionMatch = true;
+                msg += ". Extension matches: true" ;
+            }
+            log.info(msg + stopwatch.stop());
         }
 
     }
 
-
-    private void determineTargetServers() {
-        targetServers = new HashSet<>();
-        if (target.equals(Domain.getInstance().getName())) {
-            targetServers.addAll(Domain.getInstance().getServersList());
-        }
-        else if (Domain.getInstance().isCluster(target)) {
-            targetServers.addAll(Domain.getInstance().getClusterByName(target).getServersList());
-        }
-        else if (Domain.getInstance().isServer(target)) {
-            targetServers.add(Domain.getInstance().getServerByName(target));
-        }
-        else {
-            log.info("Cant find domain, cluster or server with name [" + target + "].\nUsing whole domain as a target.");
-            targetServers.addAll(Domain.getInstance().getServersList());
-        }
-    }
-
-    private void generateOutputFilePath(){
+    private void generateFilename(){
         Date dNow = new Date( );
         SimpleDateFormat sdf = new SimpleDateFormat ("'_at_'HH-mm-ss_dd-MM-yyyy" );
-        String filename = ServiceController.getRequestCount() + "hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
+        String filename = ServiceController.getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
         outputFilename = filename;
     }
 

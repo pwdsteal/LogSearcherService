@@ -1,12 +1,8 @@
 package ru.pushkarev.LogsSearcher.type;
 
-import ru.pushkarev.LogsSearcher.schedule.FileCleaner;
-import ru.pushkarev.LogsSearcher.utils.Config;
-import ru.pushkarev.LogsSearcher.utils.Stopwatch;
+import ru.pushkarev.LogsSearcher.schedule.CacheService;
 
 import javax.ejb.*;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import java.io.File;
 import java.util.concurrent.ExecutorService;
@@ -29,16 +25,19 @@ public class ServiceController {
         request.validateRequest();
         requestCount++;
 
-        // check cached result
+        if(request.isFileRequested()) {
 
+            // check cached result if matches hashcode and extension
+            if (request.isCached() && request.isCacheExtensionMatch()) {
+                return new Response(request.getCachedFile().getName());
+            }
 
-        // run synchronized in This thread
-        if(null == request.getOutputFormat()) {
-            return new Searcher(request).run();
-        } else {
             // run asynchronous, in a separate thread
             queueRequest(request);
             return new Response(request.getResultFilename());
+        } else {
+            // run search in this thread
+            return new Searcher(request).run();
         }
     }
 

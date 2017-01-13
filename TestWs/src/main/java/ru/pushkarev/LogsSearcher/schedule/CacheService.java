@@ -2,6 +2,7 @@ package ru.pushkarev.LogsSearcher.schedule;
 
 import ru.pushkarev.LogsSearcher.type.Request;
 import ru.pushkarev.LogsSearcher.utils.Config;
+import ru.pushkarev.LogsSearcher.utils.Stopwatch;
 
 import javax.ejb.Lock;
 import javax.ejb.LockType;
@@ -13,60 +14,66 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 @Singleton
-public class FileCleaner {
-    private static Logger log = Logger.getLogger(FileCleaner.class.getName());
+public class CacheService {
+    private static Logger log = Logger.getLogger(CacheService.class.getName());
 
     private static final String[] extensions = {".xml",".html",".pdf",".rtf", ".doc"};
     private AtomicBoolean busy = new AtomicBoolean(false);
 
     private static Set<File> cacheFileList = new HashSet<>();
 
-    @Lock(LockType.READ)
-    public void ClearCache() {
-        if (!busy.compareAndSet(false, true)) {
-            return;
-        }
-        log.info("Checking cache size");
-        monitorCache();
-        busy.set(false);
-
+    public static void addFileToCache(File file) {
+        cacheFileList.add(file);
     }
 
     @Lock(LockType.READ)
-    public static File tryGetXmlFromCache(Request request) {
+    public void cacheMonitor() {
+        if (!busy.compareAndSet(false, true)) {
+            return;
+        }
+        maintainCache();
+        busy.set(false);
+    }
+
+    @Lock(LockType.READ)
+    public static File tryFindCachedFile(Request request) {
+        String hashcode = Integer.toString(request.hashCode());
 
         List<File> matchList = new ArrayList<>();
         for (File file : cacheFileList) {
-            String fileName = file.getName();
-            Integer hashcode = request.hashCode();
+            if (null == file) continue;
 
+            String fileName = file.getName();
             // find all files with hashcode
-            if (fileName.contains(hashcode.toString())) {
+            if (file.exists() && fileName.contains(hashcode)) {
                 matchList.add(file);
             }
+        }
 
-            // find file with required extension (.pdf ...)
+        // find file with required extension (.pdf ...)
+        if (request.isFileRequested()) {
             for (File matchFile : matchList) {
                 if (matchFile.getName().toLowerCase().endsWith(request.getOutputFormat())) {
                     return matchFile;
                 }
             }
+        }
 
-           // try to find with .xml extension
-            for (File matchFile : matchList) {
-                if (matchFile.getName().toLowerCase().endsWith(".xml")) {
-                    return matchFile;
-                }
+        // try to find with .xml extension
+        for (File matchFile : matchList) {
+            if (matchFile.getName().toLowerCase().endsWith(".xml")) {
+                return matchFile;
             }
-
         }
 
         return null;
     }
 
 
-//    @Schedule(minute = "*", hour="*", persistent = false)
-    private void monitorCache() {
+
+    @Lock(LockType.WRITE)
+    private void maintainCache() {
+        Stopwatch stopwatch = new Stopwatch();
         File[] files = Config.getInstance().workingDirectory.toFile().listFiles();
 
         Arrays.sort(files, new Comparator<File>(){
@@ -87,22 +94,26 @@ public class FileCleaner {
 
         for (File file : files) {
             if (filesTotalSize > allowedSpace) {
-                if (file.isFile()) {
+                if (file.isFile() && isOurExtension(file.getName())) {
                     log.info("Deleting file:" + file.getName());
                     filesTotalSize -= file.length();
+                    cacheFileList.remove(file);
                     if (!file.delete()) {
                         log.info("Failed deleting file:" + file.getName());
                         filesTotalSize += file.length();
+                        cacheFileList.add(file);
                     }
                 }
             } else break;
         }
+        log.info("Cache maintain took " + stopwatch.stop());
     }
 
     private boolean isOurExtension(String fileName) {
         fileName = fileName.toLowerCase();
+        fileName.equals("XML_TO_DOC_TEMPLATE.xsl");
         for (String extension : extensions) {
-            if(fileName.contains(extension) && fileName.contains("hashcode")) {
+            if(fileName.endsWith(extension) && fileName.contains("hashcode")) {
                 return true;
             }
         }

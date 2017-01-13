@@ -90,7 +90,7 @@ public class OsUtils {
                     filesWithHits.put(file, lineNumbers);
                 }
                 if(++i % 1000000 == 0) {
-                    log.info("Still parsing... iteration :" + i);
+                    log.info("Still parsing... line :" + i);
                 }
             }
 

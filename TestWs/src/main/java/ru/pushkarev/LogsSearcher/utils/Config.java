@@ -5,6 +5,7 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 
+import javax.ejb.Schedule;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,20 +24,56 @@ public class Config {
     public final Path workingDirectory = domainPath.resolve("tmp").resolve(APP_NAME);
     public final Path configPath = domainPath.resolve("config").resolve(APP_NAME + ".cfg");
 
+    private Configurations configurations = new Configurations();
+    private Configuration configuration;
+
     private int allowedSpaceMbytes;
     private final int allowedSpaceMbytesDefault = 128;
 
     private File XML_TO_HTML_TEMPLATE;
-    private Path XML_TO_HTML_TEMPLATE_DEFAULT = workingDirectory.resolve("XML_TO_HTML_TEMPLATE.xsl");
+    private final Path XML_TO_HTML_TEMPLATE_DEFAULT = workingDirectory.resolve("XML_TO_HTML_TEMPLATE.xsl");
 
     private File XML_TO_DOC_TEMPLATE;
-    private Path XML_TO_DOC_TEMPLATE_DEFAULT = workingDirectory.resolve("XML_TO_DOC_TEMPLATE.xsl");
+    private final Path XML_TO_DOC_TEMPLATE_DEFAULT = workingDirectory.resolve("XML_TO_DOC_TEMPLATE.xsl");
 
     private File XML_TO_PDF_TEMPLATE;
-    private Path XML_TO_PDF_TEMPLATE_DEFAULT = workingDirectory.resolve("XML_TO_PDF_TEMPLATE.xsl");
+    private final Path XML_TO_PDF_TEMPLATE_DEFAULT = workingDirectory.resolve("XML_TO_PDF_TEMPLATE.xsl");
 
     public File getXML_TO_HTML_TEMPLATE() {
         return XML_TO_HTML_TEMPLATE;
+    }
+
+    public void setAllowedSpaceMbytes(int allowedSpaceMbytes) {
+
+        if (this.allowedSpaceMbytes != allowedSpaceMbytes) {
+            log.info("allowedSpaceMbytes updated from:" + this.allowedSpaceMbytes
+                    + " to:" + allowedSpaceMbytes);
+            this.allowedSpaceMbytes = allowedSpaceMbytes;
+        }
+    }
+
+    public void setXML_TO_HTML_TEMPLATE(File XML_TO_HTML_TEMPLATE) {
+        if (!java.util.Objects.equals(this.XML_TO_HTML_TEMPLATE, XML_TO_HTML_TEMPLATE)) {
+            log.info("XML_TO_HTML_TEMPLATE updated from:" + this.XML_TO_HTML_TEMPLATE
+                    + " to:" + XML_TO_HTML_TEMPLATE);
+            this.XML_TO_HTML_TEMPLATE = XML_TO_HTML_TEMPLATE;
+        }
+    }
+
+    public void setXML_TO_DOC_TEMPLATE(File XML_TO_DOC_TEMPLATE) {
+        if (!java.util.Objects.equals(this.XML_TO_DOC_TEMPLATE, XML_TO_DOC_TEMPLATE)) {
+            log.info("XML_TO_DOC_TEMPLATE updated from:" + this.XML_TO_DOC_TEMPLATE
+                    + " to:" + XML_TO_DOC_TEMPLATE);
+            this.XML_TO_DOC_TEMPLATE = XML_TO_DOC_TEMPLATE;
+        }
+    }
+
+    public void setXML_TO_PDF_TEMPLATE(File XML_TO_PDF_TEMPLATE) {
+        if (!java.util.Objects.equals(this.XML_TO_PDF_TEMPLATE, XML_TO_PDF_TEMPLATE)) {
+            log.info("XML_TO_PDF_TEMPLATE updated from:" + this.XML_TO_PDF_TEMPLATE
+                    + " to:" + XML_TO_PDF_TEMPLATE);
+            this.XML_TO_PDF_TEMPLATE = XML_TO_PDF_TEMPLATE;
+        }
     }
 
     public File getXML_TO_DOC_TEMPLATE() {
@@ -61,22 +98,8 @@ public class Config {
     }
 
     private Config() {
-
-        File configFile = configPath.toFile();
-        Configuration configuration = null;
-
-        if (configFile.exists() && configFile.isFile()) {
-            try {
-                Configurations configurations = new Configurations();
-                configuration = configurations.properties(configFile);
-
-
-            }
-            catch (Exception e) {
-                log.log(Level.WARNING, e.getMessage() + e);
-            }
-
-        } else {
+        configuration = loadConfiguration();
+        if (null == configuration) {
             configuration = createNewConfiguration();
         }
         extractDefaultXsltTemplates();
@@ -84,6 +107,12 @@ public class Config {
         log.info("Config initialized.");
     }
 
+    public void reload() {
+        Configuration configuration = loadConfiguration();
+        if (null != configuration) {
+            readProperties(configuration);
+        }
+    }
 
     private void extractDefaultXsltTemplates() {
         try(InputStream inputStream = getClass().getClassLoader().getResourceAsStream("toHTML.xsl")) {
@@ -120,42 +149,57 @@ public class Config {
         try(Writer writer = new FileWriter(configPath.toFile())) {
             configuration.write(writer);
         } catch (IOException | ConfigurationException e) {
-            log.log(Level.WARNING, e.getMessage() + e);
+            log.log(Level.WARNING, "Error saving config.file " + e.getMessage() + e);
         }
     }
+
+
+
+    private Configuration loadConfiguration() {
+        log.info("Reading config:" + configPath.getFileName());
+        Configuration configuration = null;
+        try {
+            configuration = configurations.properties(configPath.toFile());
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING,"Error reading config.file " +  e.getMessage() + e);
+        }
+        return configuration;
+    }
+
 
 
 
     private void readProperties(Configuration configuration) {
 
         try {
-            XML_TO_HTML_TEMPLATE = new File(configuration.getString("XML_TO_HTML_TEMPLATE"));
+            setXML_TO_HTML_TEMPLATE(new File(configuration.getString("XML_TO_HTML_TEMPLATE")));
         } catch (Exception e){
             log.log(Level.WARNING, "Failed to read XML_TO_HTML_TEMPLATE file property " + e.getMessage());
-            XML_TO_HTML_TEMPLATE = XML_TO_HTML_TEMPLATE_DEFAULT.toFile();
+            setXML_TO_HTML_TEMPLATE(XML_TO_HTML_TEMPLATE_DEFAULT.toFile());
             configuration.setProperty("XML_TO_HTML_TEMPLATE", XML_TO_HTML_TEMPLATE_DEFAULT.toString());
         }
         try {
-            XML_TO_DOC_TEMPLATE = new File(configuration.getString("XML_TO_DOC_TEMPLATE"));
+            setXML_TO_DOC_TEMPLATE(new File(configuration.getString("XML_TO_DOC_TEMPLATE")));
         } catch (Exception e){
             log.log(Level.WARNING, "Failed to read XML_TO_DOC_TEMPLATE file property " + e.getMessage());
-            XML_TO_DOC_TEMPLATE = XML_TO_DOC_TEMPLATE_DEFAULT.toFile();
+            setXML_TO_DOC_TEMPLATE(XML_TO_DOC_TEMPLATE_DEFAULT.toFile());
             configuration.setProperty("XML_TO_DOC_TEMPLATE", XML_TO_DOC_TEMPLATE_DEFAULT.toString());
         }
         try {
-            XML_TO_PDF_TEMPLATE = new File(configuration.getString("XML_TO_PDF_TEMPLATE"));
+            setXML_TO_PDF_TEMPLATE(new File(configuration.getString("XML_TO_PDF_TEMPLATE")));
         } catch (Exception e){
             log.log(Level.WARNING, "Failed to read XML_TO_PDF_TEMPLATE file property " + e.getMessage());
-            XML_TO_PDF_TEMPLATE = XML_TO_PDF_TEMPLATE_DEFAULT.toFile();
+            setXML_TO_PDF_TEMPLATE(XML_TO_PDF_TEMPLATE_DEFAULT.toFile());
             configuration.setProperty("XML_TO_PDF_TEMPLATE", XML_TO_PDF_TEMPLATE_DEFAULT.toString());
         }
 
 
         try {
-            allowedSpaceMbytes = configuration.getInt("allowedSpaceMbytes");
+            setAllowedSpaceMbytes(configuration.getInt("allowedSpaceMbytes"));
         } catch (Exception e) {
            log.log(Level.WARNING, "Failed to read allowedSpaceMbytes property " + e.getMessage() + e);
-            allowedSpaceMbytes = allowedSpaceMbytesDefault;
+            setAllowedSpaceMbytes(allowedSpaceMbytesDefault);
             configuration.setProperty("allowedSpaceMbytes", allowedSpaceMbytesDefault);
         }
 

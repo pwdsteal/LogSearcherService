@@ -48,4 +48,25 @@ public class Server {
         }
         return filesList;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Server server = (Server) o;
+
+        if (port != server.port) return false;
+        if (name != null ? !name.equals(server.name) : server.name != null) return false;
+        return cluster != null ? cluster.equals(server.cluster) : server.cluster == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + port;
+        result = 31 * result + (cluster != null ? cluster.hashCode() : 0);
+        return result;
+    }
 }

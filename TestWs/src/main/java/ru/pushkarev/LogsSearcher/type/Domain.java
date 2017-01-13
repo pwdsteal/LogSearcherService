@@ -46,7 +46,26 @@ public class Domain {
         clustersList.add(cluster);
     }
 
+    public static Set<Server> getTargetServers(Request request) {
+        String target = request.getTarget();
 
+        Set<Server> targetServers = new HashSet<>();
+        if (target.equals(Domain.getInstance().getName())) {
+            targetServers.addAll(Domain.getInstance().getServersList());
+        }
+        else if (Domain.getInstance().isCluster(target)) {
+            targetServers.addAll(Domain.getInstance().getClusterByName(target).getServersList());
+        }
+        else if (Domain.getInstance().isServer(target)) {
+            targetServers.add(Domain.getInstance().getServerByName(target));
+        }
+        else {
+            log.info("Cant find domain, cluster or server with name [" + target + "]. Using whole domain as a target.");
+            targetServers.addAll(Domain.getInstance().getServersList());
+        }
+
+        return targetServers;
+    }
 
 
 
@@ -150,7 +169,7 @@ public class Domain {
                 serversList.add(server);
             }
         }
-        log.info("Domain structure build done.");
+        log.info("Domain structure built.");
     }
 
 }

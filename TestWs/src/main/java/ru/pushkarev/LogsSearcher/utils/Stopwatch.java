@@ -20,6 +20,6 @@ public class Stopwatch {
     }
 
     public String stop() {
-        return getDuration() + " ms";
+        return ' ' + getDuration() + " ms";
     }
 }

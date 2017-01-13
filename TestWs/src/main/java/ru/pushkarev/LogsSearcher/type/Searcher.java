@@ -1,15 +1,12 @@
 package ru.pushkarev.LogsSearcher.type;
 
-import ru.pushkarev.LogsSearcher.utils.DateParser;
-import ru.pushkarev.LogsSearcher.utils.OsUtils;
-import ru.pushkarev.LogsSearcher.utils.Stopwatch;
+import ru.pushkarev.LogsSearcher.utils.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.sql.*;
 import java.text.ParseException;
 import java.util.*;
 import java.util.Date;
@@ -31,10 +28,13 @@ public class Searcher {
 
 
     public Response run() {
-        Stopwatch stopwatch = new Stopwatch();
+        if (request.isCached()) {
+            return FileConverter.readResponseFromXML(request.getCachedFile());
+        }
 
+        Stopwatch stopwatch = new Stopwatch();
         Response response = new Response();
-        for (Server server : request.getTargetServers()) {
+        for (Server server : Domain.getTargetServers(request)) {
             log.fine("Searching for server " + server.getName());
             Set<File> logFilesList = selectFilesByDate(server.getLogFilesList());
             if (!logFilesList.isEmpty()) {
@@ -43,6 +43,12 @@ public class Searcher {
             }
         }
         log.fine("Searching complete.");
+
+        // save to cache
+        // TODO GET PATH
+        File xmlFile = Config.getInstance().workingDirectory.resolve(request.getOutputFilename() + ".xml").toFile();
+        FileConverter.writeResponseToXML(response, xmlFile);
+
         response.setSearchTime(stopwatch.getDuration());
         return response;
     }
