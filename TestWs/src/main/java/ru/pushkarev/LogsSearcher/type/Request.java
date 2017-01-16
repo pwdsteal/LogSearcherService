@@ -3,7 +3,6 @@ package ru.pushkarev.LogsSearcher.type;
 import ru.pushkarev.LogsSearcher.schedule.CacheService;
 import ru.pushkarev.LogsSearcher.utils.DateParser;
 import ru.pushkarev.LogsSearcher.utils.RegExUtils;
-import ru.pushkarev.LogsSearcher.utils.Stopwatch;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -29,7 +28,6 @@ public class Request {
     private String target;
     @XmlElement
     private Set<DateInterval> dateIntervals = new HashSet<>();
-    @XmlElement(defaultValue = " ")
     private String outputFormat;
     @XmlElement(defaultValue = "65535")
     private int maxMatches = 65535;
@@ -40,7 +38,7 @@ public class Request {
 
 
     @XmlTransient
-    private String outputFilename;
+    private String newFilename;
     @XmlTransient
     private File cachedFile;
     @XmlTransient
@@ -54,16 +52,16 @@ public class Request {
 
     public boolean isCached() {return isCached;}
 
-    public boolean isCacheExtensionMatch() {return isCacheExtensionMatch;}
+    public boolean isCachedExtensionMatch() {return isCacheExtensionMatch;}
 
     public File getCachedFile() {
         return cachedFile;
     }
 
-    public String getOutputFilename() {return outputFilename;}
+    public String getNewFilename() {return newFilename;}
 
 //    public String getResultFilename() {
-//        return outputFilename + "." + outputFormat;
+//        return newFilename + "." + outputFormat;
 //    }
 
     public String getResultFilename() {
@@ -71,10 +69,11 @@ public class Request {
             if (isCacheExtensionMatch) {
                 return cachedFile.getName();  // return existing file
             } else {
-                return cachedFile.getName().replace(".xml", + '.' + outputFormat);  // use cache xml to gen new file
+                // return existing filename with replaced extenstion
+                return cachedFile.getName().replace(".xml", '.' + outputFormat);
             }
         } else {
-            return outputFilename + "." + outputFormat;  // create new file
+            return newFilename + "." + outputFormat;  // create new file
         }
     }
 
@@ -123,7 +122,7 @@ public class Request {
     }
 
     public void setMaxMatches(int maxMatches) {
-        if (maxMatches <= 65535) {
+        if (maxMatches <= 65535 && maxMatches > 0) {
             this.maxMatches = maxMatches;
         }
     }
@@ -132,7 +131,16 @@ public class Request {
     public Request() {}
 
 
-    public void validateRequest() {
+    public List<String> validateRequest() {
+        List<String> fatalErrors = new ArrayList<>();
+
+        searchString = searchString.trim();
+        if (searchString.length() < 3) {
+            String msg = "searchString cannot be less than 3 printable characters. [" + searchString + ']';
+            log.warning(msg);
+            fatalErrors.add(msg);
+        }
+
         // check target
         if (null == target || target.isEmpty()) {
             log.info("Target not specified. Using whole domain as a target.");
@@ -149,7 +157,9 @@ public class Request {
         // Check RegExpression
         if(isRegExp && !RegExUtils.isValidRegExp(searchString)) {
             isRegExp = false;
-            log.info("Error compile " + searchString + " as a RegExp. Using as a literal string.");
+            String msg = "Error compile " + searchString + " as a RegExp";
+            log.warning(msg);
+            fatalErrors.add(msg);
         }
 
         // check maxMatches
@@ -157,25 +167,26 @@ public class Request {
             maxMatches = 65535;
         }
 
-            if(null != outputFormat) {
-            switch (outputFormat.toLowerCase()) {
+        if(null != outputFormat) {
+            outputFormat = outputFormat.toLowerCase();
+            switch (outputFormat) {
                 case "xml":
                 case "html":
                 case "doc":
                 case "rtf":
                 case "pdf":
-                    outputFormat = outputFormat.toLowerCase();
                     isFileRequested = true;
                     break;
                 default:
-                    log.fine("Incorrect output file format: " + outputFormat);
+                    log.warning("Incorrect output file format: " + outputFormat);
                     outputFormat = null;
             }
         }
 
         generateFilename();
-
         tryFindCached();
+
+        return fatalErrors;
     }
 
     private void tryFindCached() {
@@ -192,10 +203,9 @@ public class Request {
     }
 
     private void generateFilename(){
-        Date dNow = new Date( );
+        Date dNow = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat ("'_at_'HH-mm-ss_dd-MM-yyyy" );
-        String filename = ServiceController.getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
-        outputFilename = filename;
+        newFilename = ServiceController.getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
     }
 
     @Override

@@ -28,6 +28,10 @@ public class OsUtils {
     public static Map<File, List<Integer>> runAndParseOutput(String cmd) {
         Map<File, List<Integer>> filesWithHits = new HashMap<>();
 
+        if (null == cmd) {
+            return filesWithHits;
+        }
+
         Process process = null;
         try {
             process = Runtime.getRuntime().exec(cmd);
@@ -47,7 +51,7 @@ public class OsUtils {
             String filePath = null;
             int i = 0;
             while ((line = reader.readLine())!= null) {
-                Integer lineNumber = -1;
+                Integer lineNumber = null;
 
                 // all before : is a filepath, after and before next : is line number
                 try {
@@ -74,7 +78,9 @@ public class OsUtils {
                     lineNumbers = new ArrayList<>();
                 }
                 // adding line numbers while filename is the same
-                lineNumbers.add(lineNumber);
+                if (null != lineNumber) {
+                    lineNumbers.add(lineNumber);
+                }
 
                 // at the end of cycle, put last list
                 if (!reader.ready()) {
@@ -96,6 +102,11 @@ public class OsUtils {
     }
 
     public static String buildFindstrCmd(String searchText, Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
+        // cannot search with no files
+        if (fileList.isEmpty()) {
+            return null;
+        }
+
         String cmd = "findstr /N /P /offline";
 
         if(!isCaseSensitive) {
@@ -118,6 +129,12 @@ public class OsUtils {
                 log.log(Level.WARNING, "Cannot get canonical domainPath for file:" + file.getName() + "\n" + e.getMessage() + e);
             }
         }
+
+        // add empty filepath to avoid providing only one link which cause findstr not to print filename in in the output
+        if (fileList.size() == 1) {
+            cmd += " \"\"";
+        }
+
         return cmd;
     }
 

@@ -18,6 +18,9 @@ public class Response {
     @XmlElement(name = "server")
     private List<ServerElement> servers;
 
+    @XmlElement(name = "errorsList")
+    private List<String> errorsList;
+
     public List<ServerElement> getServers() {
         return servers;
     }
@@ -50,4 +53,20 @@ public class Response {
         this.searchTime = searchTime;
     }
 
+    public List<String> getErrorsList() {
+        return errorsList;
+    }
+
+    public void setErrorsList(List<String> errorsList) {
+        this.errorsList = errorsList;
+    }
+
+    @Override
+    public String toString() {
+        return "Response{" +
+                " searchTime=" + searchTime +
+                ", filename='" + filename + '\'' +
+                ", servers=" + servers +
+                '}';
+    }
 }

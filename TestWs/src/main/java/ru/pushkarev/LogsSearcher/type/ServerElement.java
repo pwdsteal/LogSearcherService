@@ -24,4 +24,12 @@ public class ServerElement {
     }
 
     public ServerElement() {}
+
+    @Override
+    public String toString() {
+        return "ServerElement{" +
+                "name='" + name + '\'' +
+                ", logBlocks=" + logBlocks.size() +
+                '}';
+    }
 }

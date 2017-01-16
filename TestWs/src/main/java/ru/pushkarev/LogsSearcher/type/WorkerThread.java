@@ -32,9 +32,9 @@ public class WorkerThread implements Runnable {
 
     @Override
     public void run() {
-        log.info("Thread started id:" + threadId);
+        log.info("New thread started. id:" + threadId);
 
-        File xmlFile = Config.getInstance().workingDirectory.resolve(request.getOutputFilename() + ".xml").toFile();
+        File xmlFile = Config.getInstance().workingDirectory.resolve(request.getNewFilename() + ".xml").toFile();
 
         if (request.isCached()) {
             xmlFile = request.getCachedFile();
@@ -53,15 +53,14 @@ public class WorkerThread implements Runnable {
                 FileConverter.xmlToDOC(xmlFile);
                 break;
             case "pdf":
-                FileConverter.XMLToPDF(xmlFile);
+                FileConverter.xmlToPDF(xmlFile);
                 break;
             case "rtf":
-                FileConverter.XMLToRTF(xmlFile);
+                FileConverter.xmlToRTF(xmlFile);
                 break;
         }
 
-
-        log.info("Thread stopped id:" + threadId);
+        log.info("Thread stopped. id:" + threadId);
     }
 
 

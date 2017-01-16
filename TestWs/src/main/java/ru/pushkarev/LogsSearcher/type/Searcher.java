@@ -39,14 +39,16 @@ public class Searcher {
             Set<File> logFilesList = selectFilesByDate(server.getLogFilesList());
             if (!logFilesList.isEmpty()) {
                 ServerElement serverElement = new ServerElement(server.getName(), readBlocks(searchByOS(logFilesList)));
-                response.addServerElement(serverElement);
+                if (!serverElement.logBlocks.isEmpty()) {
+                    response.addServerElement(serverElement);
+                }
             }
         }
         log.info("Searching complete. " + stopwatch.stop());
 
         // save to cache
         // TODO GET PATH
-        File xmlFile = Config.getInstance().workingDirectory.resolve(request.getOutputFilename() + ".xml").toFile();
+        File xmlFile = Config.getInstance().workingDirectory.resolve(request.getNewFilename() + ".xml").toFile();
         FileConverter.writeResponseToXML(response, xmlFile);
 
         response.setSearchTime(stopwatch.getDuration());

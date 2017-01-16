@@ -4,7 +4,6 @@ import org.apache.fop.apps.*;
 import ru.pushkarev.LogsSearcher.schedule.CacheService;
 import ru.pushkarev.LogsSearcher.type.*;
 
-import javax.ejb.EJB;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -14,8 +13,6 @@ import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +24,7 @@ public class FileConverter {
 
     public static void main(String[] args) {
 
-        FileConverter.XMLToPDF(new File("C:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\new_domain\\tmp\\LogsSearcher\\" + "request_1_at_16-45-46_26-12-2016.xml"));
+        FileConverter.xmlToPDF(new File("C:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\new_domain\\tmp\\LogsSearcher\\" + "request_1_at_16-45-46_26-12-2016.xml"));
         log.setLevel(Level.ALL);
     }
 
@@ -47,6 +44,7 @@ public class FileConverter {
             JAXBContext jaxbContext = JAXBContext.newInstance(Response.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            jaxbMarshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
             jaxbMarshaller.marshal(response, file);
         } catch (JAXBException e) {
             log.log(Level.SEVERE, "Error converting response object to XML file " + e.getMessage() + e);
@@ -69,8 +67,8 @@ public class FileConverter {
     }
 
 
-    public static void XMLToPDF(File xmlFile) { XMLtoPDForRTF(xmlFile, "pdf"); }
-    public static void XMLToRTF(File xmlFile) {
+    public static void xmlToPDF(File xmlFile) { XMLtoPDForRTF(xmlFile, "pdf"); }
+    public static void xmlToRTF(File xmlFile) {
         XMLtoPDForRTF(xmlFile, "rtf");
     }
 

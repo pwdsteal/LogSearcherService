@@ -156,7 +156,7 @@ public class Config {
 
 
     private Configuration loadConfiguration() {
-        log.info("Reading config:" + configPath.getFileName());
+        log.info("Reading : " + configPath.getFileName());
         Configuration configuration = null;
         try {
             configuration = configurations.properties(configPath.toFile());

@@ -24,10 +24,21 @@ public class GuiServlet extends HttpServlet {
         LogsSearcher service = new LogsSearcherWSService().getLogsSearcherPort();
         Response WSresponse = service.search(WSrequest);
 
-
-
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
+
+            if (!WSresponse.getErrorsList().isEmpty()) {
+                out.println("<h3> LogsSearcher service failed validate your request. <br> Error List: </h3>");
+
+                out.print("<ol class=\"ui list\">");
+                for (String errorMessage : WSresponse.getErrorsList()) {
+                    out.print("<li>" + errorMessage + "</li>");
+                }
+                out.print("</ol>");
+
+                return;
+            }
+
             out.println("<p> Searching time " + WSresponse.getSearchTime() + " ms</p>");
 
             if (WSresponse.getServer().isEmpty() && WSresponse.getFilename() == null) {
@@ -38,36 +49,36 @@ public class GuiServlet extends HttpServlet {
                 out.print("<form method=\"get\" action=\"getFile\">\n" +
                         "<button class=\"positive ui button\" type=\"submit\" name=\"filename\" value=\""
                         + WSresponse.getFilename() + "\">Download File</button>\n" + "</form>");
-            }
+            } else {
 
-            for (ServerElement server : WSresponse.getServer()) {
-                if(server.getLogBlock().isEmpty()) {
-                    break;
-                }
-                out.print("<h2> " + server.getName() + "</h2>");
-                out.print("<div class=\"ui divider\"></div>");
-
-                for (LogBlock logBlock: server.getLogBlock()) {
-                    String tag;
-
-                    if (logBlock.getLog().contains("<Info>")) {
-                        tag = "<div class=\"ui info message\">";
-                    } else if (logBlock.getLog().contains("<Warning>")) {
-                        tag = "<div class=\"ui warning message\">";
-                    } else if (logBlock.getLog().contains("<Error>")) {
-                        tag = "<div class=\"ui error message\">";
-                    } else {
-                        tag = "<div class=\"ui positive message\">";
+                for (ServerElement server : WSresponse.getServer()) {
+                    if (server.getLogBlock().isEmpty()) {
+                        break;
                     }
+                    out.print("<h2> " + server.getName() + "</h2>");
+                    out.print("<div class=\"ui divider\"></div>");
 
-                    out.write(tag + "<h5>" + logBlock.getDate() + "</h5>");
-                    out.write(logBlock.getLog().replaceAll("<", "&lt").substring(4) + "</div>");
+                    for (LogBlock logBlock : server.getLogBlock()) {
+                        String tag;
+
+                        if (logBlock.getLog().contains("<Info>")) {
+                            tag = "<div class=\"ui info message\">";
+                        } else if (logBlock.getLog().contains("<Warning>")) {
+                            tag = "<div class=\"ui warning message\">";
+                        } else if (logBlock.getLog().contains("<Error>")) {
+                            tag = "<div class=\"ui error message\">";
+                        } else {
+                            tag = "<div class=\"ui positive message\">";
+                        }
+
+                        out.write(tag + "<h5>" + logBlock.getDate() + "</h5>");
+                        out.write(logBlock.getLog().substring(4) + "</div>");
+                    }
+                    out.println("<div class=\"ui divider\"></div>");
                 }
-                out.println("<div class=\"ui divider\"></div>");
             }
 
         }
-
 
     }
 
