@@ -9,7 +9,6 @@ import javax.ejb.EJB;
 import java.io.File;
 import java.util.logging.Logger;
 
-@ManagedBean
 public class WorkerThread implements Runnable {
 
     private static Logger log = Logger.getLogger(WorkerThread.class.getName());
@@ -19,8 +18,7 @@ public class WorkerThread implements Runnable {
     private Response response;
     private int threadId;
 
-    public WorkerThread() {
-    }
+    public WorkerThread() {}
 
     @EJB
     private CacheService cacheService;

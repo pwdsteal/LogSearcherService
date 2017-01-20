@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.util.*;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,7 +113,7 @@ public class Searcher {
 
                 for (Block block : resultBlocks) {
                     if(currentHit++ > request.getMaxMatches()) {
-                        log.finer("stopped at max matches " + ((100.0/resultBlocks.size()*logBlocks.size())) + " % " );
+                        log.info("stopped at max matches " + ((100.0/resultBlocks.size()*logBlocks.size())) + " % " );
                         break;
                     }
                     Date block_date = null;
@@ -125,35 +124,28 @@ public class Searcher {
                     }
                     // read block
                     StringBuilder buffer = null;
-                    try {
-                        while (lineNumber <= block.getEnd() && (line = reader.readLine()) != null) {
-                            if(lineNumber++ == block.getStart()) {
-                                block_date = extractDateFromBlock(line);
-                                // if block doesn't match dates range, skip it
-                                if(isDateInInterval(block_date)) {
-                                    buffer = new StringBuilder(line.length() + 4);
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            // continue build block
-                            if(buffer.length() > 0) {
-                                buffer.append(line);
-                                buffer.append("\n");
-                            } else {
-                                buffer.append(line);
-                            }
+                    while (lineNumber <= block.getEnd() && (line = reader.readLine()) != null) {
+                        if(lineNumber++ == block.getStart()) {
+                            block_date = extractDateFromBlock(line);
+                            // if block doesn't match dates range, skip it
+                            if(isDateInInterval(block_date)) {
+                                buffer = new StringBuilder(line.length() + 4);
+                            } else break;
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        // continue build block
+                        if(buffer.length() > 0) {
+                            buffer.append(line);
+                            buffer.append("\n");
+                        } else {
+                            buffer.append(line);
+                        }
                     }
                     if (buffer != null) {
                         logBlocks.add(new LogBlock(toXMLGregorianCalendar(block_date), buffer.toString()));
                     }
                 }
             } catch (IOException e) {
-                log.log(Level.WARNING, " Error at reading file " + e.getMessage() + e);
+                log.log(Level.WARNING, " Error at reading " + e.getMessage() + e);
             }
             log.fine("Readed " + logBlocks.size() + " blocks took " + stopwatch.stop());
         }
@@ -180,11 +172,11 @@ public class Searcher {
     }
 
     private boolean isDateInInterval(Date date) {
-            for (DateInterval dateInterval : request.getDateIntervals()) {
-                if (date.after(dateInterval.getStart()) && date.before(dateInterval.getEnd())) {
-                    return true;
-                }
+        for (DateInterval dateInterval : request.getDateIntervals()) {
+            if (date.after(dateInterval.getStart()) && date.before(dateInterval.getEnd())) {
+                return true;
             }
+        }
         return false;
     }
 

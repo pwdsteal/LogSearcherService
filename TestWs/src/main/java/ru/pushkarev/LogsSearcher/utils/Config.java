@@ -28,7 +28,7 @@ public class Config {
     private Configuration configuration;
 
     private int allowedSpaceMbytes;
-    private final int allowedSpaceMbytesDefault = 128;
+    private final int allowedSpaceMbytesDefault = 512;
 
     private File XML_TO_HTML_TEMPLATE;
     private final Path XML_TO_HTML_TEMPLATE_DEFAULT = workingDirectory.resolve("XML_TO_HTML_TEMPLATE.xsl");

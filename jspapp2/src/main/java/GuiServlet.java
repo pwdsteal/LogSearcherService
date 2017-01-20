@@ -18,7 +18,7 @@ public class GuiServlet extends HttpServlet {
 
 
     protected void doPost(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws javax.servlet.ServletException, IOException {
-        EventLogger.logEvent(request);
+        EventLogger.getInstance().logEvent(request);
         ru.pushkarev.logssearcher.ws.Request WSrequest = parseRequest(request);
 
         LogsSearcher service = new LogsSearcherWSService().getLogsSearcherPort();
@@ -45,12 +45,14 @@ public class GuiServlet extends HttpServlet {
                 out.print("<h3> Nothing Found </h3>");
             }
 
+            // print button Download
             if (WSresponse.getFilename() != null) {
                 out.print("<form method=\"get\" action=\"getFile\">\n" +
                         "<button class=\"positive ui button\" type=\"submit\" name=\"filename\" value=\""
                         + WSresponse.getFilename() + "\">Download File</button>\n" + "</form>");
             } else {
 
+                // print result on page
                 for (ServerElement server : WSresponse.getServer()) {
                     if (server.getLogBlock().isEmpty()) {
                         break;
@@ -72,7 +74,7 @@ public class GuiServlet extends HttpServlet {
                         }
 
                         out.write(tag + "<h5>" + logBlock.getDate() + "</h5>");
-                        out.write(logBlock.getLog().substring(4) + "</div>");
+                        out.write(logBlock.getLog().replaceAll("<", "&lt").substring(4) + "</div>");
                     }
                     out.println("<div class=\"ui divider\"></div>");
                 }

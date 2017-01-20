@@ -1,9 +1,9 @@
 package ru.pushkarev.LogsSearcher.ws;
 
-import ru.pushkarev.LogsSearcher.type.*;
-import ru.pushkarev.LogsSearcher.utils.Config;
+import ru.pushkarev.LogsSearcher.type.Request;
+import ru.pushkarev.LogsSearcher.type.Response;
+import ru.pushkarev.LogsSearcher.type.ServiceController;
 
-import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.jws.WebMethod;
 import javax.jws.WebService;
@@ -17,7 +17,7 @@ public class LogsSearcherWS {
 
     @WebMethod(operationName = "Search")
     public Response search(Request request) {
-        return new ServiceController().processRequest(request);
+        return ServiceController.getInstance().processRequest(request);
     }
 
 }

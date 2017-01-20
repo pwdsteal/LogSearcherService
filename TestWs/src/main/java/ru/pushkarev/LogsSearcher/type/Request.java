@@ -205,7 +205,7 @@ public class Request {
     private void generateFilename(){
         Date dNow = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat ("'_at_'HH-mm-ss_dd-MM-yyyy" );
-        newFilename = ServiceController.getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
+        newFilename = ServiceController.getInstance().getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
     }
 
     @Override

@@ -19,7 +19,7 @@ public class GetFile extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        EventLogger.logEvent(request, "GET FILE");
+        EventLogger.getInstance().logEvent(request, "GET FILE");
         String filename = request.getParameter("filename");
 
         if(filename != null) {

@@ -17,7 +17,7 @@ User '<%=request.getRemoteUser()%>' has been logged out.
 
 <%
 
-    util.EventLogger.logEvent(request, "logout");
+    util.EventLogger.getInstance().logEvent(request, "logout");
 
     session.invalidate();
     request.logout();

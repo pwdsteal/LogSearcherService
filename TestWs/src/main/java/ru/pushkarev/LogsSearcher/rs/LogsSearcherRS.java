@@ -21,7 +21,7 @@ public class LogsSearcherRS {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public ru.pushkarev.LogsSearcher.type.Response search(ru.pushkarev.LogsSearcher.type.Request request) {
-        return new ServiceController().processRequest(request);
+        return ServiceController.getInstance().processRequest(request);
     }
 
     @GET
