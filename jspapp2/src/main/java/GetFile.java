@@ -9,9 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-/**
- * Created by Opushkarev on 26.12.2016.
- */
+
 @WebServlet(urlPatterns = "/getFile")
 public class GetFile extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -23,7 +21,7 @@ public class GetFile extends HttpServlet {
         String filename = request.getParameter("filename");
 
         if(filename != null) {
-            response.sendRedirect("http://localhost:7001/LogsSearcherWS/api/get/" + filename);
+            response.sendRedirect("http://localhost:7001/LogsSearcherWS/pushkarev/get/" + filename);
         }
     }
 }

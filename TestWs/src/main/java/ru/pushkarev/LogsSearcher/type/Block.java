@@ -25,6 +25,10 @@ public class Block {
     public static Set<Block> getBlocksToRead(List<Integer> hitList , List<Integer> blockList) {
         Set<Block> resultBlocks = new LinkedHashSet<>();
 
+        if (null == blockList || null == hitList) {
+            return resultBlocks;
+        }
+
         for (int i = 0, j_last = 0; i < hitList.size(); i++) {  // get line number
             for (int j = j_last; j < blockList.size() ; j++) { // iterate trough all blocks
                 if(j == blockList.size() - 1 && hitList.get(i) >= blockList.get(j)) {  // handle last block
@@ -67,8 +71,6 @@ public class Block {
         Block other = (Block) obj;
         if (start != other.getStart())
             return false;
-        if (end != other.getEnd())
-            return false;
-        return true;
+        return end == other.getEnd();
     }
 }

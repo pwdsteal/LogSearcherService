@@ -15,13 +15,13 @@ public class Scheduler {
     private CacheService cacheService;
 
     @Lock(LockType.READ)
-    @Schedule(minute = "*/2", hour="*", persistent = false)
+    @Schedule(minute = "*/5", hour="*", persistent = false)
     public void cacheSchedule() {
         cacheService.cacheMonitor();
     }
 
     @Lock(LockType.READ)
-    @Schedule(minute = "*/1", hour="*", persistent = false)
+    @Schedule(minute = "*/5", hour="*", persistent = false)
     public void configAutoReloadSchedule() {
         Config.getInstance().reload();
     }

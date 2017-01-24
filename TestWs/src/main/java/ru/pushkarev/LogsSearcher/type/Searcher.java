@@ -55,15 +55,7 @@ public class Searcher {
     }
 
     private Map<File, List<Integer>> searchByOS(Set<File> fileList) {
-        String cmd;
-
-        if(OsUtils.runnningOS == OsUtils.WINDOWS) {
-            cmd = OsUtils.buildFindstrCmd(request.getSearchString(), fileList, request.isCaseSensitive(), request.isRegExp());
-        } else {
-            cmd = OsUtils.buildGrepCmd();
-        }
-
-        return runAndParseOutput(cmd);
+        return runAndParseOutput(OsUtils.buildCmd(request.getSearchString(), fileList, request.isCaseSensitive(), request.isRegExp()));
     }
 
 
@@ -95,7 +87,11 @@ public class Searcher {
 
 
     private Set<LogBlock> readBlocks(Map<File, List<Integer>> filesWithHits) {
-        Map<File, List<Integer>> blockStartList = runAndParseOutput(OsUtils.buildFindstrCmd("####", filesWithHits.keySet(), true, false));
+        Map<File, List<Integer>> blockStartList = new HashMap<>();
+
+        if (!filesWithHits.isEmpty()) {
+            blockStartList = runAndParseOutput(OsUtils.buildCmd("####", filesWithHits.keySet(), true, false));
+        }
         Set<LogBlock> logBlocks = new LinkedHashSet<>();
 
         for (File file : filesWithHits.keySet()) {
@@ -103,7 +99,7 @@ public class Searcher {
             Stopwatch stopwatch = new Stopwatch();
 
             Set<Block> resultBlocks = Block.getBlocksToRead(filesWithHits.get(file), blockStartList.get(file));
-            log.finer(resultBlocks.size() + " blocks selected");
+            log.info(resultBlocks.size() + " blocks selected");
 
             dateParser = new DateParser();  // create new instance for each file. Each Log file may have different time format
             try (BufferedReader reader = new BufferedReader( new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {

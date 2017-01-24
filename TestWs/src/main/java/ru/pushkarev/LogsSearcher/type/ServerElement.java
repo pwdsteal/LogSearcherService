@@ -9,7 +9,6 @@ import javax.xml.bind.annotation.XmlElement;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-@Stateless
 public class ServerElement {
 
     @XmlAttribute

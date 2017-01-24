@@ -38,7 +38,7 @@
 
 
     <build>
-        <finalName>LogSearcher</finalName>
+        <finalName>PushkarevLogSearcher</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

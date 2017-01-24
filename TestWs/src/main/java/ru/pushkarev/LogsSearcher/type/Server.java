@@ -24,7 +24,12 @@ public class Server {
     public Server(String name, String machine, String port, Cluster cluster) {
         this.name = name;
         this.machine = machine;
-        this.port = Integer.parseInt(port);
+
+        try {
+            this.port = Integer.parseInt(port);
+        } catch (NumberFormatException e) {
+            this.port = -1;
+        }
 
         this.cluster = cluster;
         cluster.addServer(this);

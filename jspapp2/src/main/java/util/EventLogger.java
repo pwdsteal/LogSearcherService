@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 
 public class EventLogger {
+
     private static EventLogger instance;
 
     public static synchronized EventLogger getInstance(){
