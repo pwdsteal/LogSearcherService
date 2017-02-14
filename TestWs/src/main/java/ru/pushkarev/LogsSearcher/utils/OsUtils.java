@@ -1,7 +1,7 @@
 package ru.pushkarev.LogsSearcher.utils;
 
-import ru.pushkarev.LogsSearcher.type.Searcher;
 
+import javax.validation.constraints.NotNull;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -22,52 +22,34 @@ public class OsUtils {
         runnningOS = determineOS();
     }
 
-
     private OsUtils() {}
 
     /**
      * Run cmd that searches text pattern in specified files and reads output
      * @return HashMap with files contains List of matching lines
      *  */
-    public static Map<File, List<Integer>> runAndParseOutput(List<String> cmd) {
+    public static Map<File, List<Integer>> runAndParseOutput(ProcessBuilder processBuilder) {
         Map<File, List<Integer>> filesWithHits = new HashMap<>();
-
-        if (null == cmd) {
-            log.info("returned empty filesWithHits");
-            return filesWithHits;
-        }
 
         Process process = null;
         try {
-            process = Runtime.getRuntime().exec(cmd.toArray(new String[0]));
+            process = processBuilder.start();
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed run cmd" + e);
+            log.log(Level.WARNING, "Failed run cmd : " + e);
         }
-        log.info("Parsing output for cmd:" + cmd);
-//        try {
-//            log.info("Wait for exit value " + process.waitFor());
-//        } catch (InterruptedException e) {
-//            log.info("Wait for exception ");
-//        }
+        log.info("Parsing output for cmd:" + processBuilder.command());
 
 
         Stopwatch stopwatch = new Stopwatch();
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
-
-            while ((line = errorReader.readLine())!= null) {
-                log.info("Error Stream:");
-                log.info(line);
-            }
 
             File file = null;
             List<Integer> lineNumbers = new ArrayList<>();
             String currentFilePath = null;
             String filePath = null;
             int i = 0;
-
-            while ((line = reader.readLine())!= null) {
+            while ((line = reader.readLine()) != null) {
                 Integer lineNumber = null;
 
                 // all before : is a filepath, after and before next : is line number
@@ -77,7 +59,7 @@ public class OsUtils {
                     log.log(Level.WARNING, "unexpected string:" + line + "\n" + e.getMessage() + e);
                 }
                 try {
-                    lineNumber = Integer.parseInt(line.substring(filePath.length()+1, line.indexOf(':', filePath.length()+1)));
+                    lineNumber = Integer.valueOf(line.substring(filePath.length()+1, line.indexOf(':', filePath.length()+1)));
                 } catch (Exception e) {
                     log.log(Level.WARNING, "Failed to parse filename and line number from result line :" + line + "\n" + e.getMessage() + e);
                 }
@@ -113,16 +95,13 @@ public class OsUtils {
             log.log(Level.SEVERE, "Exception at reading process output. "  + e.getMessage() + e);
 
         }
-        log.info(" took " + stopwatch.stop());
+        log.fine(" took " + stopwatch.stop());
 
+        log.info("files with hits: " + filesWithHits.size());
         return filesWithHits;
     }
 
-    public static String buildFindstrCmd(String searchString, Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
-        // cannot search with no files
-        if (fileList.isEmpty()) {
-            return null;
-        }
+    public static String buildFindstrCmd(@NotNull String searchString, @NotNull Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
 
         String cmd = "findstr /N /P /offline";
 
@@ -132,22 +111,22 @@ public class OsUtils {
 
         if(isRegExp) {
             String pattern = RegExUtils.convertToFindstrFormat(searchString);
-            cmd += " /R /C:\"" + pattern + "\"";
+            cmd += " /R /C:\"" + pattern + '"';
         } else {
             // /L - use as literal string
-            cmd += " /L /C:\"" + searchString + "\"";
+            cmd += " /L /C:\"" + searchString + '"';
         }
 
         for (File file : fileList) {
             //
             try {
-                cmd += " \"" + file.getCanonicalPath() + "\"";
+                cmd += " \"" + file.getCanonicalPath() + '"';
             } catch (IOException e) {
                 log.log(Level.WARNING, "Cannot get canonical domainPath for file:" + file.getName() + "\n" + e.getMessage() + e);
             }
         }
 
-        // add empty filepath to avoid providing only one link which cause findstr not to print filename in in the output
+        // add empty filepath "" to avoid providing only one link which cause findstr not to print filename in in the output
         if (fileList.size() == 1) {
             cmd += " \"\"";
         }
@@ -155,13 +134,46 @@ public class OsUtils {
         return cmd;
     }
 
+    public static List<String> buildFindstrCmdAlt(@NotNull String searchString, @NotNull Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
+        List<String> cmdList = new ArrayList<>();
 
-    public static List<String> buildGrepCmdAlt(String searhString, Set<File> fileList, boolean isCaseSensitive) {
-        if (fileList.isEmpty()) {
-            return null;
+        cmdList.add("findstr");
+        cmdList.add("/OFF");  // search files
+        cmdList.add("/N");  // print line number
+
+        if(!isCaseSensitive) {
+            cmdList.add("/I");  // case sensitive off
         }
 
+        if(isRegExp) {
+            String pattern = RegExUtils.convertToFindstrFormat(searchString);
+            cmdList.add("/R");  // use as a RegExp
+            cmdList.add("/C:" + '"' + pattern + '"');  // TODO Escape " character in pattern (cause in a bad cmd line ~ like sql injection)
+        } else {
+            cmdList.add("/L");  // use as literal string
+            cmdList.add("/C:" + '"' + searchString + '"');
+        }
+
+        for (File file : fileList) {
+            try {
+                cmdList.add(file.getCanonicalPath());
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Cannot get canonical domainPath for file:" + file.getName() + "\n" + e.getMessage() + e);
+            }
+        }
+
+        // add empty filepath to avoid providing only one link which cause findstr not to print filename in in the output
+        if (fileList.size() == 1) {
+            cmdList.add("\"\"");
+        }
+
+        return cmdList;
+    }
+
+
+    public static List<String> buildGrepCmd(String searhString, Set<File> fileList, boolean isCaseSensitive) {
         List<String> cmdList = new ArrayList<>();
+
         cmdList.add("grep" );
         cmdList.add("-n"); // print line numbers
         cmdList.add("-o"); // print only matching word instead of full string
@@ -170,9 +182,9 @@ public class OsUtils {
         if (!isCaseSensitive) {
             cmdList.add("-i"); // case sensitive off
         }
+
         cmdList.add('"' + searhString + '"');
 
-        // add files
         for (File file : fileList) {
             try {
                 cmdList.add(file.getCanonicalPath());
@@ -192,17 +204,16 @@ public class OsUtils {
         }
     }
 
-    public static List<String> buildCmd(String searchString, Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
-        List<String> cmd = null;
+    public static ProcessBuilder buildCmd(String searchString, Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
+        ProcessBuilder processBuilder;
 
         if(runnningOS == WINDOWS) {
-            cmd = new ArrayList<>();
-            cmd.add(buildFindstrCmd(searchString, fileList, isCaseSensitive, isRegExp));
+            processBuilder = new ProcessBuilder(buildFindstrCmdAlt(searchString, fileList, isCaseSensitive, isRegExp));
         } else {
-            cmd = buildGrepCmdAlt(searchString, fileList, isCaseSensitive);
+            processBuilder = new ProcessBuilder(buildGrepCmd(searchString, fileList, isCaseSensitive));
         }
 
-        return cmd;
+        return processBuilder;
     }
 
 

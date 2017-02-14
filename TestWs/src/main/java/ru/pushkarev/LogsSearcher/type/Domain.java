@@ -6,6 +6,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import ru.pushkarev.LogsSearcher.utils.Config;
 
+import javax.ejb.Singleton;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
@@ -14,7 +15,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 public class Domain {
     private static Logger log = Logger.getLogger(Domain.class.getName());

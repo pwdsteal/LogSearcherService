@@ -1,5 +1,6 @@
 package ru.pushkarev.LogsSearcher.type;
 
+import javax.validation.constraints.NotNull;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,12 +23,8 @@ public class Block {
         this.end = end;
     }
 
-    public static Set<Block> getBlocksToRead(List<Integer> hitList , List<Integer> blockList) {
+    public static Set<Block> getBlocksToRead(@NotNull List<Integer> hitList , @NotNull List<Integer> blockList) {
         Set<Block> resultBlocks = new LinkedHashSet<>();
-
-        if (null == blockList || null == hitList) {
-            return resultBlocks;
-        }
 
         for (int i = 0, j_last = 0; i < hitList.size(); i++) {  // get line number
             for (int j = j_last; j < blockList.size() ; j++) { // iterate trough all blocks

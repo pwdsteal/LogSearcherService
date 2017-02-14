@@ -21,7 +21,7 @@ public class GuiServlet extends HttpServlet {
         EventLogger.getInstance().logEvent(request);
         ru.pushkarev.logssearcher.ws.Request WSrequest = parseRequest(request);
 
-        LogsSearcher service = new LogsSearcherWSService().getLogsSearcherPort();
+        PushkarevLogsSearcher service = new LogsSearcherWSService().getPushkarevLogsSearcherPort();
         Response WSresponse = service.search(WSrequest);
 
         response.setContentType("text/html;charset=UTF-8");

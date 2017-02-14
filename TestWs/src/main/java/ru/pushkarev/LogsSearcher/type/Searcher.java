@@ -2,9 +2,11 @@ package ru.pushkarev.LogsSearcher.type;
 
 import ru.pushkarev.LogsSearcher.utils.*;
 
+import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
@@ -13,24 +15,25 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ru.pushkarev.LogsSearcher.utils.DateParser.toXMLGregorianCalendar;
-import static ru.pushkarev.LogsSearcher.utils.OsUtils.runAndParseOutput;
+import static ru.pushkarev.LogsSearcher.utils.OsUtils.*;
 
 public class Searcher {
     private static Logger log = Logger.getLogger(Searcher.class.getName());
 
     private Request request;
     private DateParser dateParser;
+    private File xmlFile;
+
+    public File getXmlFile() { return xmlFile; }
+
 
     public Searcher(Request request) {
         this.request = request;
+        xmlFile = Config.getInstance().workingDirectory.resolve(request.getFilename() + ".xml").toFile();
     }
 
-
+    // we assume that all checks for cached file are made before. So if we run searcher - there is no cached file, we need to do a search.
     public Response run() {
-        if (request.isCached()) {
-            return FileConverter.readResponseFromXML(request.getCachedFile());
-        }
-
         Stopwatch stopwatch = new Stopwatch();
         Response response = new Response();
         for (Server server : Domain.getTargetServers(request)) {
@@ -43,19 +46,18 @@ public class Searcher {
                 }
             }
         }
-        log.info("Searching complete. " + stopwatch.stop());
+        log.info("Searching in files done. " + stopwatch.stop());
 
         // save to cache
-        // TODO GET PATH
-        File xmlFile = Config.getInstance().workingDirectory.resolve(request.getNewFilename() + ".xml").toFile();
         FileConverter.writeResponseToXML(response, xmlFile);
 
         response.setSearchTime(stopwatch.getDuration());
         return response;
     }
 
-    private Map<File, List<Integer>> searchByOS(Set<File> fileList) {
-        return runAndParseOutput(OsUtils.buildCmd(request.getSearchString(), fileList, request.isCaseSensitive(), request.isRegExp()));
+
+    private Map<File, List<Integer>> searchByOS(@NotNull Set<File> fileList) {
+        return runAndParseOutput(buildCmd(request.getSearchString(), fileList, request.isCaseSensitive(), request.isRegExp()));
     }
 
 
@@ -86,20 +88,21 @@ public class Searcher {
     }
 
 
-    private Set<LogBlock> readBlocks(Map<File, List<Integer>> filesWithHits) {
-        Map<File, List<Integer>> blockStartList = new HashMap<>();
-
-        if (!filesWithHits.isEmpty()) {
-            blockStartList = runAndParseOutput(OsUtils.buildCmd("####", filesWithHits.keySet(), true, false));
-        }
+    private Set<LogBlock> readBlocks(@NotNull Map<File, List<Integer>> filesWithHits) {
         Set<LogBlock> logBlocks = new LinkedHashSet<>();
 
+        if (filesWithHits.isEmpty()) {
+            return logBlocks;
+        }
+
+        Map<File, List<Integer>> blockStartList = runAndParseOutput(OsUtils.buildCmd("^####", filesWithHits.keySet(), true, true));
+
         for (File file : filesWithHits.keySet()) {
-            log.finer("reading blocks from file " + file.getName());
+            log.fine("reading blocks from file " + file.getName());
             Stopwatch stopwatch = new Stopwatch();
 
             Set<Block> resultBlocks = Block.getBlocksToRead(filesWithHits.get(file), blockStartList.get(file));
-            log.info(resultBlocks.size() + " blocks selected");
+            log.finer(resultBlocks.size() + " blocks selected");
 
             dateParser = new DateParser();  // create new instance for each file. Each Log file may have different time format
             try (BufferedReader reader = new BufferedReader( new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
@@ -108,7 +111,7 @@ public class Searcher {
                 int currentHit = 0;
 
                 for (Block block : resultBlocks) {
-                    if(currentHit++ > request.getMaxMatches()) {
+                    if(!request.isFileRequested() && currentHit++ > request.getMaxMatches()) {
                         log.info("stopped at max matches " + ((100.0/resultBlocks.size()*logBlocks.size())) + " % " );
                         break;
                     }
@@ -143,33 +146,40 @@ public class Searcher {
             } catch (IOException e) {
                 log.log(Level.WARNING, " Error at reading " + e.getMessage() + e);
             }
-            log.fine("Readed " + logBlocks.size() + " blocks took " + stopwatch.stop());
+            log.info("Readed " + logBlocks.size() + " blocks from " + file.getName() + " took " + stopwatch.stop());
         }
+//        System.gc();
         return logBlocks;
     }
 
     private Date extractDateFromBlock(String text) {
         Date date;
-        String dateTimeString = null;
-        try {
-            dateTimeString = text.substring(text.indexOf('<')+1, text.indexOf('>'));
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Date extracting error :" + text + e.getMessage());
-            date = new Date();
+        String dateTimeString;
+
+        int start = text.indexOf('<') + 1;
+        int end = text.indexOf('>');
+        if(end != -1) {
+            dateTimeString = text.substring(start, end);
         }
+        else {
+            log.log(Level.WARNING, "Date extracting error from :" + text);
+            return null;
+        }
+
+
         try {
             date = dateParser.parse(dateTimeString);
         } catch (ParseException e) {
-            log.log(Level.WARNING, "Date parsing error :" + e.getMessage());
-            date = new Date();
+            log.log(Level.WARNING, "Date parsing error :" + dateTimeString + e);
+            return null;
         }
-
         return date;
     }
 
     private boolean isDateInInterval(Date date) {
+        if (date == null) return false;
         for (DateInterval dateInterval : request.getDateIntervals()) {
-            if (date.after(dateInterval.getStart()) && date.before(dateInterval.getEnd())) {
+            if (dateInterval.getStart().before(date) && dateInterval.getEnd().after(date)) {
                 return true;
             }
         }

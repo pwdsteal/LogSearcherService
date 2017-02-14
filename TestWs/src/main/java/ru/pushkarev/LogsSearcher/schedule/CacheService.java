@@ -74,13 +74,9 @@ public class CacheService {
     @Lock(LockType.WRITE)
     private void maintainCache() {
         Stopwatch stopwatch = new Stopwatch();
-        File[] files = Config.getInstance().workingDirectory.toFile().listFiles();
 
-        Arrays.sort(files, new Comparator<File>(){
-            public int compare(File f1, File f2)
-            {
-                return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
-            } });
+        File[] files = Config.getInstance().workingDirectory.toFile().listFiles();
+        Arrays.sort(files, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
 
         long filesTotalSize = 0;
         for (File file : files) {

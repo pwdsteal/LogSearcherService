@@ -50,7 +50,7 @@ public class FileConverter {
             log.log(Level.SEVERE, "Error converting response object to XML file " + e.getMessage() + e);
             throw new RuntimeException();
         }
-        log.info("xml file conversion complete.  " + stopwatch.stop());
+        log.info("xml file creation complete.  " + stopwatch.stop());
         CacheService.addFileToCache(file);
     }
 

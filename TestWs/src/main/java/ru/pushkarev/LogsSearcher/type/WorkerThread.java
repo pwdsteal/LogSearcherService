@@ -15,7 +15,6 @@ public class WorkerThread implements Runnable {
     private static int threadCount = 0;
 
     private Request request;
-    private Response response;
     private int threadId;
 
     public WorkerThread() {}
@@ -25,19 +24,23 @@ public class WorkerThread implements Runnable {
 
     public WorkerThread(Request request) {
         this.request = request;
-        this.threadId = threadCount++;
+        synchronized (this) {
+            this.threadId = threadCount++;
+        }
     }
 
     @Override
     public void run() {
         log.info("New thread started. id:" + threadId);
 
-        File xmlFile = Config.getInstance().workingDirectory.resolve(request.getNewFilename() + ".xml").toFile();
+        File xmlFile;
 
         if (request.isCached()) {
             xmlFile = request.getCachedFile();
         } else {
-            response = new Searcher(request).run();
+            Searcher searcher = new Searcher(request);
+            searcher.run();
+            xmlFile = searcher.getXmlFile();
         }
 
         switch (request.getOutputFormat()) {

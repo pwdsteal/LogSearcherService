@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Request {
     private static Logger log = Logger.getLogger(Request.class.getName());
+    private static final int MAX_MATCHES_PER_SERVER_DEFAULT = 32768;
 
     @XmlElement(required = true, defaultValue = "error")
     @NotNull @Size(min = 3)
@@ -29,8 +30,7 @@ public class Request {
     @XmlElement
     private Set<DateInterval> dateIntervals = new HashSet<>();
     private String outputFormat;
-    @XmlElement(defaultValue = "65535")
-    private int maxMatches = 65535;
+    private int maxMatches = MAX_MATCHES_PER_SERVER_DEFAULT;  // max blocks per server
     @XmlElement(defaultValue = "false")
     private boolean isCaseSensitive;
     @XmlElement(defaultValue = "false")
@@ -38,7 +38,7 @@ public class Request {
 
 
     @XmlTransient
-    private String newFilename;
+    private String filename;
     @XmlTransient
     private File cachedFile;
     @XmlTransient
@@ -58,13 +58,13 @@ public class Request {
         return cachedFile;
     }
 
-    public String getNewFilename() {return newFilename;}
+    public String getFilename() {return filename;}
 
-//    public String getResultFilename() {
-//        return newFilename + "." + outputFormat;
+//    public String getFilenameWithExtension() {
+//        return filename + "." + outputFormat;
 //    }
 
-    public String getResultFilename() {
+    public String getFilenameWithExtension() {
         if (isCached) {
             if (isCacheExtensionMatch) {
                 return cachedFile.getName();  // return existing file
@@ -73,7 +73,7 @@ public class Request {
                 return cachedFile.getName().replace(".xml", '.' + outputFormat);
             }
         } else {
-            return newFilename + "." + outputFormat;  // create new file
+            return filename + "." + outputFormat;  // create new file
         }
     }
 
@@ -122,7 +122,7 @@ public class Request {
     }
 
     public void setMaxMatches(int maxMatches) {
-        if (maxMatches <= 65535 && maxMatches > 0) {
+        if (maxMatches > 0 ) {
             this.maxMatches = maxMatches;
         }
     }
@@ -162,11 +162,6 @@ public class Request {
             fatalErrors.add(msg);
         }
 
-        // check maxMatches
-        if (maxMatches <= 1) {
-            maxMatches = 65535;
-        }
-
         if(null != outputFormat) {
             outputFormat = outputFormat.toLowerCase();
             switch (outputFormat) {
@@ -182,6 +177,11 @@ public class Request {
                     outputFormat = null;
             }
         }
+
+        if(maxMatches <= 0) maxMatches = MAX_MATCHES_PER_SERVER_DEFAULT;
+        // reduce output to browser page
+        if(!isFileRequested && maxMatches >= MAX_MATCHES_PER_SERVER_DEFAULT)  // requested to much result to browser
+            this.maxMatches = MAX_MATCHES_PER_SERVER_DEFAULT;
 
         generateFilename();
         tryFindCached();
@@ -205,7 +205,7 @@ public class Request {
     private void generateFilename(){
         Date dNow = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat ("'_at_'HH-mm-ss_dd-MM-yyyy" );
-        newFilename = ServiceController.getInstance().getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
+        filename = ServiceController.getInstance().getRequestCount() + "-request_hashcode[" + this.hashCode() + ']' + sdf.format(dNow);
     }
 
     @Override
@@ -223,6 +223,16 @@ public class Request {
     }
 
     @Override
+    public int hashCode() {
+        int result = searchString.hashCode();
+        result = 31 * result + Domain.getTargetServers(this).hashCode();
+        result = 31 * result + (dateIntervals != null ? dateIntervals.hashCode() : 0);
+        result = 31 * result + (isCaseSensitive ? 1 : 0);
+        result = 31 * result + (isRegExp ? 1 : 0);
+        return result;
+    }
+
+/*    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -235,15 +245,6 @@ public class Request {
         if (target != null ? !target.equals(request.target) : request.target != null) return false;
         return dateIntervals != null ? dateIntervals.equals(request.dateIntervals) : request.dateIntervals == null;
 
-    }
+    }*/
 
-    @Override
-    public int hashCode() {
-        int result = searchString.hashCode();
-        result = 31 * result + (target != null ? target.hashCode() : 0);
-        result = 31 * result + (dateIntervals != null ? dateIntervals.hashCode() : 0);
-        result = 31 * result + (isCaseSensitive ? 1 : 0);
-        result = 31 * result + (isRegExp ? 1 : 0);
-        return result;
-    }
 }

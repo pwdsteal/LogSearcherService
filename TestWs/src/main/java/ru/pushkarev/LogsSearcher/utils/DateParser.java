@@ -13,9 +13,18 @@ import java.util.logging.Logger;
 public final class DateParser {
     private static Logger log = Logger.getLogger(DateParser.class.getName());
 
-    private  String dateFormat;
-    private  SimpleDateFormat simpleDateFormat;
-    private boolean isFirstParse = true;
+    private static DatatypeFactory datatypeFactory;
+
+    static {
+        try {
+            datatypeFactory = DatatypeFactory.newInstance();
+        } catch (DatatypeConfigurationException e) {
+            log.severe("Failed create DatatypeFactory. " + e);
+        }
+    }
+
+    private String dateFormat;
+    private SimpleDateFormat simpleDateFormat;
 
     private static final Map<String, String> DATE_FORMAT_REGEXPS = new HashMap<String, String>() {{
         put("^[a-z]\\w\\w (\\d{1,2}), \\d\\d\\d\\d \\d{1,2}:\\d{2}:\\d{2} [a-z]{2} [a-z]{3}$", "MMM d, yyyy h:m:s a ");  // <Jul 11, 2016 1:05:01 PM MSK>
@@ -49,17 +58,14 @@ public final class DateParser {
     public DateParser() { }
 
     public Date parse(String dateString) throws ParseException {
-        if (isFirstParse) {
-            dateFormat = determineDateFormat(dateString);
-        }
         if (dateFormat == null) {
-            throw new ParseException("Unknown date format.", 0);
+            dateFormat = determineDateFormat(dateString);
         }
         return parse(dateString, dateFormat);
     }
 
-    public  Date parse(String dateString, String dateFormat) throws ParseException {
-        if (isFirstParse) {
+    public Date parse(String dateString, String dateFormat) throws ParseException {
+        if (simpleDateFormat == null) {
             simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
         }
         //simpleDateFormat.setLenient(false); // Don't automatically convert invalid date.
@@ -72,16 +78,16 @@ public final class DateParser {
     }
 
 
-    public  String determineDateFormat(String dateString) {
-        for (String regexp : DATE_FORMAT_REGEXPS.keySet()) {
-            if (dateString.toLowerCase().matches(regexp)) {
-                return DATE_FORMAT_REGEXPS.get(regexp);
+    public String determineDateFormat(String dateString) {
+        for (Map.Entry<String, String> entry : DATE_FORMAT_REGEXPS.entrySet()) {
+            if (dateString.toLowerCase().matches(entry.getKey())) {
+                return entry.getValue();
             }
         }
         return null; // Unknown format.
     }
 
-    public  boolean isValidDate(String dateString) {
+    public boolean isValidDate(String dateString) {
         try {
             parse(dateString);
             return true;
@@ -90,7 +96,7 @@ public final class DateParser {
         }
     }
 
-    public  boolean isValidDate(String dateString, String dateFormat) {
+    public boolean isValidDate(String dateString, String dateFormat) {
         try {
             parse(dateString, dateFormat);
             return true;
@@ -105,13 +111,7 @@ public final class DateParser {
     public static XMLGregorianCalendar toXMLGregorianCalendar(Date date){
         GregorianCalendar gCalendar = new GregorianCalendar();
         gCalendar.setTime(date);
-        XMLGregorianCalendar xmlCalendar = null;
-        try {
-            xmlCalendar = DatatypeFactory.newInstance().newXMLGregorianCalendar(gCalendar);
-        } catch (DatatypeConfigurationException ex) {
-            log.log(Level.WARNING, "Error converting Date to XMLGregorianCalendar\n" + ex.getMessage() + ex);
-        }
-        return xmlCalendar;
+        return datatypeFactory.newXMLGregorianCalendar(gCalendar);
     }
 
     /*

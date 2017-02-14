@@ -12,10 +12,15 @@ import java.util.Set;
 
 public class Server {
     private String name;
+
     private String machine;
+
     private int port;
+
     private Cluster cluster;
+
     private Path path;
+
 
     public String getName() {return name; }
 

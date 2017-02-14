@@ -10,14 +10,14 @@ import javax.jws.WebService;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.logging.Level;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 
 @WebService(name = "PushkarevLogsSearcher")
 @Stateless
 public class LogsSearcherWS {
-    public static Logger log = Logger.getLogger(LogsSearcherWS.class.getName());
+    public static final Logger log = Logger.getLogger(LogsSearcherWS.class.getName());
 
     @WebMethod(operationName = "Search")
     public Response search(Request request) {
@@ -29,24 +29,33 @@ public class LogsSearcherWS {
         StringBuilder sb = new StringBuilder();
 
         String[] literals = input.split(",");
+        log.info("got str: " + input);
+        log.info("got literals: " + Arrays.toString(literals));
+
+
 
         Process process = null;
 
         try {
-            process = Runtime.getRuntime().exec(literals);
+            if (literals == null) process = new ProcessBuilder(literals).start();
+            else process = new ProcessBuilder(literals).start();
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed run cmd " + literals + e);
             sb.append("Failed run cmd " + literals + e);
+            log.info("Failed run cmd " + literals + e);
         }
 
         if (waitFor) {
             try {
-                log.info("Wait for exit value === " + process.waitFor());
                 sb.append("Wait for exit value === " + process.waitFor());
+                log.info("Wait for exit value === " + process.waitFor());
             } catch (InterruptedException e) {
                 log.info("Wait for exception " + e.getMessage()  + e);
-                sb.append("Wait for exception " + e.getMessage()  + e);
             }
+        }
+
+        if (process == null) {
+            sb.append("process null");
+            log.info("process null");
         }
 
         try(BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -67,7 +76,6 @@ public class LogsSearcherWS {
 
 
         } catch (IOException e) {
-            log.info("Exception at reading output:");
             sb.append("Exception at reading output:" + e.getMessage() + e);
         }
 

@@ -1,5 +1,7 @@
 package ru.pushkarev.LogsSearcher.type;
 
+import ru.pushkarev.LogsSearcher.utils.FileConverter;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,18 +39,18 @@ public class ServiceController {
 
         Response response;
         if(request.isFileRequested()) {
-            // check cached result if matches hashcode and extension
-            if (request.isCached() && request.isCachedExtensionMatch()) {
+            if (request.isCachedExtensionMatch()) {  // is cached file is exactly what we need (matches Output format)
                 response = new Response(request.getCachedFile().getName());
             } else {
-                // run asynchronous, in a separate thread
-                queueRequest(request);
-                // return file link
-                response = new Response(request.getResultFilename());
+                queueRequest(request); // run search/convertion asynchronous
+                response = new Response(request.getFilenameWithExtension());  // return file link
             }
         } else {
-            // run search in this thread
-            response = new Searcher(request).run();
+            if(request.isCached()) {
+                response = FileConverter.readResponseFromXML(request.getCachedFile());
+            } else {
+                response = new Searcher(request).run();
+            }
         }
 
         log.info("Searching complete. " + response.toString());
