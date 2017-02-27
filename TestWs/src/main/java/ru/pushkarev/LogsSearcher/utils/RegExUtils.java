@@ -7,13 +7,11 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-/**
- * Created by Opushkarev on 25.11.2016.
- */
-public class RegExUtils {
-    private static Logger log = Logger.getLogger(RegExUtils.class.getName());
 
-    private static HashMap<String, String> findstrReplaceMap = new HashMap<String, String>() {{
+public class RegExUtils {
+    private static final Logger log = Logger.getLogger(RegExUtils.class.getName());
+
+    private static final HashMap<String, String> findstrReplaceMap = new HashMap<String, String>() {{
         put("\\d", "[0-9]");
         put("\\s", "[ ]");
         put("\\S", "[^ ]");

@@ -15,10 +15,10 @@ public class ServiceController {
 
     private ServiceController() {}
 
-    private Logger log = Logger.getLogger(ServiceController.class.getName());
+    private final Logger log = Logger.getLogger(ServiceController.class.getName());
     private final int MAX_THREADS = 5;
     private int requestCount = 1;
-    private ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREADS);
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREADS);
 
 
     public int getRequestCount() {
@@ -35,7 +35,7 @@ public class ServiceController {
             return response;
         }
 
-        log.info("Got request " + requestCount + request.toString());
+        log.info("Got request " + requestCount + " ***** " + request.toString());
 
         Response response;
         if(request.isFileRequested()) {
@@ -53,7 +53,7 @@ public class ServiceController {
             }
         }
 
-        log.info("Searching complete. " + response.toString());
+        log.info("Searching complete. " + " * * * * *  " + response.toString());
         return response;
     }
 

@@ -16,7 +16,7 @@
             <http-method>POST</http-method>
         </web-resource-collection>
         <auth-constraint>
-            <role-name>webuser</role-name>
+            <role-name>Administrators</role-name>
         </auth-constraint>
     </security-constraint>
     <login-config>
@@ -27,7 +27,7 @@
         </form-login-config>
     </login-config>
     <security-role>
-        <role-name>webuser</role-name>
+        <role-name>Administrators</role-name>
     </security-role>
 
 </web-app>

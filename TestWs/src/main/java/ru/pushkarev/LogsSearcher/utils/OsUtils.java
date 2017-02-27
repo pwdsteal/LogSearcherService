@@ -12,15 +12,13 @@ import java.util.logging.Logger;
 
 
 public class OsUtils {
-    private static Logger log = Logger.getLogger(OsUtils.class.getName());
+    private static final Logger log = Logger.getLogger(OsUtils.class.getName());
 
-    public static final int runnningOS;
-    public static final int WINDOWS = 0;
-    public static final int UNIX = 1;
-
-    static {
-        runnningOS = determineOS();
+    enum OStype {
+        WINDOWS, UNIX
     }
+
+    public static final OStype runnningOS = determineOS();
 
     private OsUtils() {}
 
@@ -56,12 +54,12 @@ public class OsUtils {
                 try {
                     filePath = line.substring(0, line.indexOf(':', 3));  // begin index is > 2 to skip match of "C:\"
                 } catch (IndexOutOfBoundsException e) {
-                    log.log(Level.WARNING, "unexpected string:" + line + "\n" + e.getMessage() + e);
+                    log.log(Level.WARNING, "unexpected string:" + line + "\n" + e);
                 }
                 try {
                     lineNumber = Integer.valueOf(line.substring(filePath.length()+1, line.indexOf(':', filePath.length()+1)));
                 } catch (Exception e) {
-                    log.log(Level.WARNING, "Failed to parse filename and line number from result line :" + line + "\n" + e.getMessage() + e);
+                    log.log(Level.WARNING, "Failed to parse filename and line number from result line :" + line + "\n" + e);
                 }
 
                 if(file == null) {
@@ -101,40 +99,7 @@ public class OsUtils {
         return filesWithHits;
     }
 
-    public static String buildFindstrCmd(@NotNull String searchString, @NotNull Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
-
-        String cmd = "findstr /N /P /offline";
-
-        if(!isCaseSensitive) {
-            cmd += " /I ";  // case sensitive off
-        }
-
-        if(isRegExp) {
-            String pattern = RegExUtils.convertToFindstrFormat(searchString);
-            cmd += " /R /C:\"" + pattern + '"';
-        } else {
-            // /L - use as literal string
-            cmd += " /L /C:\"" + searchString + '"';
-        }
-
-        for (File file : fileList) {
-            //
-            try {
-                cmd += " \"" + file.getCanonicalPath() + '"';
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Cannot get canonical domainPath for file:" + file.getName() + "\n" + e.getMessage() + e);
-            }
-        }
-
-        // add empty filepath "" to avoid providing only one link which cause findstr not to print filename in in the output
-        if (fileList.size() == 1) {
-            cmd += " \"\"";
-        }
-
-        return cmd;
-    }
-
-    public static List<String> buildFindstrCmdAlt(@NotNull String searchString, @NotNull Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
+    public static List<String> buildFindstrCmd(@NotNull String searchString, @NotNull Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
         List<String> cmdList = new ArrayList<>();
 
         cmdList.add("findstr");
@@ -183,7 +148,7 @@ public class OsUtils {
             cmdList.add("-i"); // case sensitive off
         }
 
-        cmdList.add('"' + searhString + '"');
+        cmdList.add( searhString  );
 
         for (File file : fileList) {
             try {
@@ -196,23 +161,24 @@ public class OsUtils {
         return cmdList;
     }
 
-    private static int determineOS() {
+    private static OStype determineOS() {
         if(System.getProperty("os.name").toLowerCase().contains("windows")) {
-            return WINDOWS;
+            return OStype.WINDOWS;
         } else {
-            return UNIX;
+            return OStype.UNIX;
         }
     }
 
     public static ProcessBuilder buildCmd(String searchString, Set<File> fileList, boolean isCaseSensitive, boolean isRegExp) {
-        ProcessBuilder processBuilder;
-
-        if(runnningOS == WINDOWS) {
-            processBuilder = new ProcessBuilder(buildFindstrCmdAlt(searchString, fileList, isCaseSensitive, isRegExp));
-        } else {
-            processBuilder = new ProcessBuilder(buildGrepCmd(searchString, fileList, isCaseSensitive));
+        ProcessBuilder processBuilder = null;
+        switch (runnningOS) {
+            case WINDOWS:
+                processBuilder = new ProcessBuilder(buildFindstrCmd(searchString, fileList, isCaseSensitive, isRegExp));
+                break;
+            case UNIX:
+                processBuilder = new ProcessBuilder(buildGrepCmd(searchString, fileList, isCaseSensitive));
+                break;
         }
-
         return processBuilder;
     }
 

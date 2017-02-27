@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 
 @Singleton
 public class Scheduler {
-    private static Logger log = Logger.getLogger(Scheduler.class.getName());
 
     @EJB
     private CacheService cacheService;

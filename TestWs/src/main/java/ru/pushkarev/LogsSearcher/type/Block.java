@@ -7,8 +7,8 @@ import java.util.Set;
 
 
 public class Block {
-    private int start;
-    private int end;
+    private final int start;
+    private final int end;
 
     public int getStart() {
         return start;
@@ -29,16 +29,14 @@ public class Block {
         for (int i = 0, j_last = 0; i < hitList.size(); i++) {  // get line number
             for (int j = j_last; j < blockList.size() ; j++) { // iterate trough all blocks
                 if(j == blockList.size() - 1 && hitList.get(i) >= blockList.get(j)) {  // handle last block
-                    Block block = new Block(blockList.get(j), Integer.MAX_VALUE);  // read till the end of file
-                    resultBlocks.add(block);
+                    resultBlocks.add(new Block(blockList.get(j), Integer.MAX_VALUE));
                     j_last = j;
                     break;
                 }
                 // hit => block start          and         hit <= next block start
                 if (hitList.get(i) >= blockList.get(j) && hitList.get(i) < blockList.get(j + 1)) { // next hit in another block
                     // check if next hit in another block?
-                    Block block = new Block(blockList.get(j), blockList.get(j+1) -1);
-                    resultBlocks.add(block);
+                    resultBlocks.add(new Block(blockList.get(j), blockList.get(j+1) -1));
                     j_last = j;
                     break;
                 }

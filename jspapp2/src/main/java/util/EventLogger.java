@@ -25,21 +25,15 @@ public class EventLogger {
     private static Logger log = Logger.getLogger(EventLogger.class.getName());
     private static PreparedStatement preparedStatement;
 
-    public EventLogger() {
-        Connection connection = getConnection();
-        try {
-            String logEvent = "INSERT INTO logs (user, action, url, datetime, parameters) VALUES (?,?,?, now(), ?);";
-            preparedStatement = connection.prepareStatement(logEvent);
-        } catch (SQLException e) {
-            log.warning("Failed create prepared statement" + e);
-        }
-    }
+    private EventLogger() {}
 
     public void logEvent(HttpServletRequest request) {
         logEvent(request, null);
     }
 
     public synchronized void logEvent(HttpServletRequest request, String action) {
+        if (!ensureConnection()) return;
+
         try {
             preparedStatement.setString(1, request.getRemoteUser());
             preparedStatement.setString(3, request.getRequestURI());
@@ -61,6 +55,20 @@ public class EventLogger {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean ensureConnection() {
+        if (preparedStatement != null) return true;
+
+        Connection connection = getConnection();
+        if (connection == null) return false;
+        try {
+            String logEvent = "INSERT INTO logs (user, action, url, datetime, parameters) VALUES (?,?,?, now(), ?);";
+            preparedStatement = connection.prepareStatement(logEvent);
+        } catch (SQLException e) {
+            log.warning("Failed create prepared statement" + e);
+        }
+        return true;
     }
 
     private static String convertParametersToString(Map<String, String[]> parametersMap) {

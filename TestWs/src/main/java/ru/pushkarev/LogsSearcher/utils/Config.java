@@ -5,7 +5,6 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 
-import javax.ejb.Schedule;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,15 +16,14 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 
 public class Config {
-    private Logger log = Logger.getLogger(Config.class.getName());
+    private static final Logger log = Logger.getLogger(Config.class.getName());
     public final String APP_NAME = "LogsSearcher";
 
     public final Path domainPath = Paths.get(System.getProperty("user.dir"));
     public final Path workingDirectory = domainPath.resolve("tmp").resolve(APP_NAME);
     public final Path configPath = domainPath.resolve("config").resolve(APP_NAME + ".cfg");
 
-    private Configurations configurations = new Configurations();
-    private Configuration configuration;
+    private final Configurations configurations = new Configurations();
 
     private int allowedSpaceMbytes;
     private final int allowedSpaceMbytesDefault = 512;
@@ -98,7 +96,7 @@ public class Config {
     }
 
     private Config() {
-        configuration = loadConfiguration();
+        Configuration configuration = loadConfiguration();
         if (null == configuration) {
             configuration = createNewConfiguration();
         }
@@ -149,7 +147,7 @@ public class Config {
         try(Writer writer = new FileWriter(configPath.toFile())) {
             configuration.write(writer);
         } catch (IOException | ConfigurationException e) {
-            log.log(Level.WARNING, "Error saving config.file " + e.getMessage() + e);
+            log.log(Level.WARNING, "Error saving config.file " + e);
         }
     }
 

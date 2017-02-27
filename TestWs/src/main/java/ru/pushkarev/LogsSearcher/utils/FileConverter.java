@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 
 public class FileConverter {
-    private static Logger log = Logger.getLogger(FileConverter.class.getName());
+    private static final Logger log = Logger.getLogger(FileConverter.class.getName());
 
     private FileConverter() {}
 
@@ -148,8 +148,6 @@ public class FileConverter {
             SourceLocator locator = e.getLocator();
             int col = locator.getColumnNumber();
             int line = locator.getLineNumber();
-            String publicId = locator.getPublicId();
-            String systemId = locator.getSystemId();
             log.log(Level.SEVERE, "Error xml to " + outputFormat + " conversion. An error occurred while applying the XSL file : " +
                     xsltTemplate.getName() + " Line:"+line + " Column:"+col + e.getMessage() + e);
         }

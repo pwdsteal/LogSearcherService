@@ -7,6 +7,7 @@
     <groupId>pushkarev</groupId>
     <artifactId>jspapp2</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
 
     <dependencies>
         <dependency>
@@ -33,6 +34,7 @@
 
 
     <build>
+        <finalName>PushkarevLogSearcherGUI</finalName>
     <plugins>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -73,6 +75,12 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-war-plugin</artifactId>
             <configuration>
+                <webResources>
+                    <resource>
+                        <!-- this is relative to the pom.xml directory -->
+                        <directory>web</directory>
+                    </resource>
+                </webResources>
                 <failOnMissingWebXml>false</failOnMissingWebXml>
             </configuration>
             <version>2.4</version>
@@ -88,7 +96,11 @@
                         <goal>wsimport</goal>
                     </goals>
                     <configuration>
-                        <wsdlUrls><wsdlUrl>http://192.168.0.219:7001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl></wsdlUrls>
+                        <wsdlUrls>
+                            <!--<wsdlUrl>http://192.168.0.209:7001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>-->
+                            <wsdlUrl>http://192.168.0.102:3001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>
+                            <!--<wsdlUrl>http://localhost:7001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>-->
+                        </wsdlUrls>
                         <keep>true</keep>
                         <sourceDestDir>target/generated-sources</sourceDestDir>
 

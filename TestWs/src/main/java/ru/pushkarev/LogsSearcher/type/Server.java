@@ -2,8 +2,6 @@ package ru.pushkarev.LogsSearcher.type;
 
 import ru.pushkarev.LogsSearcher.utils.Config;
 
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -48,7 +46,7 @@ public class Server {
 
         File[] files = new File(this.path.resolve("logs").toString()).listFiles();
 
-        for (File file : files) {
+        for (File file : files != null ? files : new File[0]) {
             if (file.isFile() &&
                     file.getName().contains(this.name + ".log") ||
                     file.getName().contains(Domain.getInstance().getName() + ".log")) {  // add %domain_name% logs

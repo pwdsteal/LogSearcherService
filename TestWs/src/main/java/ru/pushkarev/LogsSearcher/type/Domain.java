@@ -6,7 +6,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import ru.pushkarev.LogsSearcher.utils.Config;
 
-import javax.ejb.Singleton;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
@@ -17,7 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Domain {
-    private static Logger log = Logger.getLogger(Domain.class.getName());
+    private static final Logger log = Logger.getLogger(Domain.class.getName());
 
     private static Domain instance;
     public static synchronized Domain getInstance(){
@@ -28,13 +27,13 @@ public class Domain {
     }
 
     private Domain() {
-        parseConfigXml();
+        parseDomainConfig();
     }
 
 
     private String name;
-    private Set<Cluster> clustersList = new HashSet<>();
-    private Set<Server> serversList = new HashSet<>();
+    private final Set<Cluster> clustersList = new HashSet<>();
+    private final Set<Server> serversList = new HashSet<>();
 
 
     public String getName() { return name; }
@@ -73,7 +72,7 @@ public class Domain {
 
 
     /** Checks existing cluster or create new one */
-    public Cluster getClusterInstance(String name) {
+    public Cluster getOrCreateCluster(String name) {
         // Find existing cluster
         for (Cluster cluster : clustersList  ) {
             if (cluster.getName().equalsIgnoreCase(name))
@@ -124,7 +123,7 @@ public class Domain {
      * Reads config.xml
      * Builds Domain Structure
      */
-    public void parseConfigXml() {
+    public void parseDomainConfig() {
         // Reading config.xml
         Path configPath = Config.getInstance().domainPath.resolve("config").resolve("config.xml");
         Document doc;
@@ -166,7 +165,7 @@ public class Domain {
                 }
                 if(eElement.getElementsByTagName("cluster").item(0) != null) {
                     String clusterName = eElement.getElementsByTagName("cluster").item(0).getTextContent();
-                    cluster = getClusterInstance(clusterName);
+                    cluster = getOrCreateCluster(clusterName);
                 }
                 Server server = new Server(name, machine, port, cluster);
                 serversList.add(server);

@@ -21,7 +21,8 @@ public class GetFile extends HttpServlet {
         String filename = request.getParameter("filename");
 
         if(filename != null) {
-            response.sendRedirect("http://localhost:7001/LogsSearcherWS/pushkarev/get/" + filename);
+            request.getLocalAddr();
+            response.sendRedirect("http://" + request.getLocalAddr() + ":" + request.getLocalPort() + "/LogsSearcherWS/pushkarev/get/" + filename);
         }
     }
 }

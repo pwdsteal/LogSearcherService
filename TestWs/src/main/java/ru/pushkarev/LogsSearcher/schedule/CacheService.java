@@ -2,11 +2,9 @@ package ru.pushkarev.LogsSearcher.schedule;
 
 import ru.pushkarev.LogsSearcher.type.Request;
 import ru.pushkarev.LogsSearcher.utils.Config;
-import ru.pushkarev.LogsSearcher.utils.Stopwatch;
 
 import javax.ejb.Lock;
 import javax.ejb.LockType;
-import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import java.io.File;
 import java.util.*;
@@ -15,12 +13,12 @@ import java.util.logging.Logger;
 
 @Singleton
 public class CacheService {
-    private static Logger log = Logger.getLogger(CacheService.class.getName());
+    private static final Logger log = Logger.getLogger(CacheService.class.getName());
 
     private static final String[] extensions = {".xml",".html",".pdf",".rtf", ".doc"};
-    private AtomicBoolean busy = new AtomicBoolean(false);
+    private final AtomicBoolean busy = new AtomicBoolean(false);
 
-    private static Set<File> cacheFileList = new HashSet<>();
+    private static final Set<File> cacheFileList = new HashSet<>();
 
     public static void addFileToCache(File file) {
         cacheFileList.add(file);
@@ -73,10 +71,8 @@ public class CacheService {
 
     @Lock(LockType.WRITE)
     private void maintainCache() {
-        Stopwatch stopwatch = new Stopwatch();
-
         File[] files = Config.getInstance().workingDirectory.toFile().listFiles();
-        Arrays.sort(files, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
+        Arrays.sort(files != null ? files : new File[0], (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
 
         long filesTotalSize = 0;
         for (File file : files) {
@@ -102,7 +98,6 @@ public class CacheService {
                 }
             } else break;
         }
-        log.info("Cache maintain took " + stopwatch.stop());
     }
 
     private boolean isOurExtension(String fileName) {

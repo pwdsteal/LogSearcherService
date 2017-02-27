@@ -100,14 +100,17 @@ public class GuiServlet extends HttpServlet {
         WSrequest.setIsCaseSensitive(Boolean.parseBoolean(request.getParameter("isCaseSensitive")));
         WSrequest.setOutputFormat(request.getParameter("outputFormat"));
 
-        for(String dateRange : request.getParameter("dates").split(",")) {
-            String[] datePair = dateRange.split(" - ");
+        String dates = request.getParameter("dates");
+        if (!(null == dates || dates.isEmpty())) {
+            for (String dateRange : request.getParameter("dates").split(",")) {
+                String[] datePair = dateRange.split(" - ");
 
-            DateInterval dateInterval = new DateInterval();
-            dateInterval.setStartXMLGC(datePair[0].replaceAll(" ", ""));
-            dateInterval.setEndXMLGC(datePair[1].replaceAll(" ", ""));
+                DateInterval dateInterval = new DateInterval();
+                dateInterval.setStartXMLGC(datePair[0].replaceAll(" ", ""));
+                dateInterval.setEndXMLGC(datePair[1].replaceAll(" ", ""));
 
-            WSrequest.getDateIntervals().add(dateInterval);
+                WSrequest.getDateIntervals().add(dateInterval);
+            }
         }
 
         return WSrequest;

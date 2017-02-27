@@ -1,13 +1,9 @@
 package ru.pushkarev.LogsSearcher.type;
 
-import ru.pushkarev.LogsSearcher.utils.Config;
-
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerElement {
 
@@ -15,9 +11,9 @@ public class ServerElement {
     private String name;
 
     @XmlElement(name = "logBlock")
-    Set<LogBlock> logBlocks = new LinkedHashSet<>();
+    List<LogBlock> logBlocks = new ArrayList<>();
 
-    public ServerElement(String name, Set<LogBlock> logBlocks) {
+    public ServerElement(String name, List<LogBlock> logBlocks) {
         this.name = name;
         this.logBlocks = logBlocks;
     }

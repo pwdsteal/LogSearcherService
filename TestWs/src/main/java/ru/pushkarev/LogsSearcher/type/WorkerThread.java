@@ -1,18 +1,17 @@
 package ru.pushkarev.LogsSearcher.type;
 
 import ru.pushkarev.LogsSearcher.schedule.CacheService;
-import ru.pushkarev.LogsSearcher.utils.Config;
 import ru.pushkarev.LogsSearcher.utils.FileConverter;
 
-import javax.annotation.ManagedBean;
 import javax.ejb.EJB;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public class WorkerThread implements Runnable {
 
-    private static Logger log = Logger.getLogger(WorkerThread.class.getName());
-    private static int threadCount = 0;
+    private static final Logger log = Logger.getLogger(WorkerThread.class.getName());
+    private static AtomicInteger threadCount = new AtomicInteger(0);
 
     private Request request;
     private int threadId;
@@ -24,9 +23,7 @@ public class WorkerThread implements Runnable {
 
     public WorkerThread(Request request) {
         this.request = request;
-        synchronized (this) {
-            this.threadId = threadCount++;
-        }
+        this.threadId = threadCount.incrementAndGet();
     }
 
     @Override

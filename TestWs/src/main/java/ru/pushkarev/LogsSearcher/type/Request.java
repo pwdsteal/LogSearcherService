@@ -1,7 +1,6 @@
 package ru.pushkarev.LogsSearcher.type;
 
 import ru.pushkarev.LogsSearcher.schedule.CacheService;
-import ru.pushkarev.LogsSearcher.utils.DateParser;
 import ru.pushkarev.LogsSearcher.utils.RegExUtils;
 
 import javax.validation.constraints.NotNull;
@@ -16,20 +15,22 @@ import java.util.logging.Logger;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Request {
-    private static Logger log = Logger.getLogger(Request.class.getName());
+    private static final Logger log = Logger.getLogger(Request.class.getName());
     private static final int MAX_MATCHES_PER_SERVER_DEFAULT = 32768;
 
-    @XmlElement(required = true, defaultValue = "error")
+    @XmlElement(required = true)
     @NotNull @Size(min = 3)
     private String searchString;
 
 
     // optional parameters
-    @XmlElement(defaultValue = "domain")
+    @XmlElement
     private String target;
     @XmlElement
     private Set<DateInterval> dateIntervals = new HashSet<>();
+    @XmlElement
     private String outputFormat;
+    @XmlElement
     private int maxMatches = MAX_MATCHES_PER_SERVER_DEFAULT;  // max blocks per server
     @XmlElement(defaultValue = "false")
     private boolean isCaseSensitive;
@@ -37,6 +38,8 @@ public class Request {
     private boolean isRegExp;
 
 
+    // TODO seprate this to RawRequest and ValidatedRequest or Query
+    // TODO Avoid generate null dates? improve speed
     @XmlTransient
     private String filename;
     @XmlTransient
@@ -47,6 +50,8 @@ public class Request {
     private boolean isCached;
     @XmlTransient
     private boolean isCacheExtensionMatch;
+    @XmlTransient
+    private boolean isDatesPresented;
 
     public boolean isFileRequested() {return isFileRequested;}
 
@@ -127,6 +132,8 @@ public class Request {
         }
     }
 
+    public boolean isDatesPresented() { return isDatesPresented; }
+
 
     public Request() {}
 
@@ -148,10 +155,8 @@ public class Request {
         }
 
         // check dateIntervals
-        if(dateIntervals.isEmpty()) {
-            dateIntervals.add(new DateInterval(
-                    DateParser.toXMLGregorianCalendar(new Date(0)),
-                    DateParser.toXMLGregorianCalendar(new Date())));
+        if(!dateIntervals.isEmpty()) {
+            isDatesPresented = true;
         }
 
         // Check RegExpression

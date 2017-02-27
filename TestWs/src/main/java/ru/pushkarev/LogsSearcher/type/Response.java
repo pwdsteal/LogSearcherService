@@ -1,7 +1,6 @@
 package ru.pushkarev.LogsSearcher.type;
 
 import javax.xml.bind.annotation.*;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 

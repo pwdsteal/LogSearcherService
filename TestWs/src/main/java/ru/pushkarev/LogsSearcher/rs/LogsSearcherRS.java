@@ -2,12 +2,9 @@ package ru.pushkarev.LogsSearcher.rs;
 
 
 
-import ru.pushkarev.LogsSearcher.type.Domain;
 import ru.pushkarev.LogsSearcher.type.ServiceController;
 import ru.pushkarev.LogsSearcher.utils.Config;
 
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;

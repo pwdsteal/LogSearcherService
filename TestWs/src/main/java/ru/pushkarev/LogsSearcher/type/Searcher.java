@@ -6,7 +6,6 @@ import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
@@ -18,9 +17,9 @@ import static ru.pushkarev.LogsSearcher.utils.DateParser.toXMLGregorianCalendar;
 import static ru.pushkarev.LogsSearcher.utils.OsUtils.*;
 
 public class Searcher {
-    private static Logger log = Logger.getLogger(Searcher.class.getName());
+    private static final Logger log = Logger.getLogger(Searcher.class.getName());
 
-    private Request request;
+    private final Request request;
     private DateParser dateParser;
     private File xmlFile;
 
@@ -62,7 +61,7 @@ public class Searcher {
 
 
     private Set<File> selectFilesByDate(Set<File> fileList) {
-        if (request.getDateIntervals().isEmpty()) {
+        if (!request.isDatesPresented()) {
             return fileList;
         }
 
@@ -88,8 +87,8 @@ public class Searcher {
     }
 
 
-    private Set<LogBlock> readBlocks(@NotNull Map<File, List<Integer>> filesWithHits) {
-        Set<LogBlock> logBlocks = new LinkedHashSet<>();
+    private List<LogBlock> readBlocks(@NotNull Map<File, List<Integer>> filesWithHits) {
+        List<LogBlock> logBlocks = new ArrayList<>();
 
         if (filesWithHits.isEmpty()) {
             return logBlocks;
@@ -108,14 +107,14 @@ public class Searcher {
             try (BufferedReader reader = new BufferedReader( new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
                 String line;
                 int lineNumber = 1;  // findstr starts count at 1
-                int currentHit = 0;
+                Date block_date;  // TODO IS IT WORKS? no new var declaring?
 
                 for (Block block : resultBlocks) {
-                    if(!request.isFileRequested() && currentHit++ > request.getMaxMatches()) {
+                    if(!request.isFileRequested() && logBlocks.size() > request.getMaxMatches()) {
                         log.info("stopped at max matches " + ((100.0/resultBlocks.size()*logBlocks.size())) + " % " );
                         break;
                     }
-                    Date block_date = null;
+                    block_date = null;
                     // skip lines
                     while(lineNumber < block.getStart()) {
                         reader.readLine();
@@ -126,10 +125,11 @@ public class Searcher {
                     while (lineNumber <= block.getEnd() && (line = reader.readLine()) != null) {
                         if(lineNumber++ == block.getStart()) {
                             block_date = extractDateFromBlock(line);
-                            // if block doesn't match dates range, skip it
-                            if(isDateInInterval(block_date)) {
-                                buffer = new StringBuilder(line.length() + 4);
-                            } else break;
+                            if(request.isDatesPresented() && !isDateInInterval(block_date)) {
+                                // skip block if date not in range
+                                break;
+                            }
+                            buffer = new StringBuilder(line.length() + 4);
                         }
                         // continue build block
                         if(buffer.length() > 0) {
@@ -146,7 +146,7 @@ public class Searcher {
             } catch (IOException e) {
                 log.log(Level.WARNING, " Error at reading " + e.getMessage() + e);
             }
-            log.info("Readed " + logBlocks.size() + " blocks from " + file.getName() + " took " + stopwatch.stop());
+            log.info("Readed " + logBlocks.size() + " blocks with " + file.getName() + " took " + stopwatch.stop());
         }
 //        System.gc();
         return logBlocks;
@@ -166,13 +166,7 @@ public class Searcher {
             return null;
         }
 
-
-        try {
-            date = dateParser.parse(dateTimeString);
-        } catch (ParseException e) {
-            log.log(Level.WARNING, "Date parsing error :" + dateTimeString + e);
-            return null;
-        }
+        date = dateParser.parse(dateTimeString);
         return date;
     }
 
