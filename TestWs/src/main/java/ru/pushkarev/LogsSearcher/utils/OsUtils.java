@@ -18,7 +18,13 @@ public class OsUtils {
         WINDOWS, UNIX
     }
 
-    public static final OStype runnningOS = determineOS();
+    public static final OStype runnningOS;
+    public static final int WINDOWS = 0;
+    public static final int UNIX = 1;
+
+    static {
+        runnningOS = determineOS();
+    }
 
     private OsUtils() {}
 
