@@ -32,7 +32,6 @@ public class LogsSearcherRS {
             response = Response.ok(file);
             response.header("Content-Disposition", "attachment; filename=" + file.getName());
         } else {
-            response.status(200);
             response.entity("File is not ready yet.");
         }
 

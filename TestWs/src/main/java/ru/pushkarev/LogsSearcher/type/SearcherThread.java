@@ -8,20 +8,20 @@ import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-public class WorkerThread implements Runnable {
+public class SearcherThread implements Runnable {
 
-    private static final Logger log = Logger.getLogger(WorkerThread.class.getName());
+    private static final Logger log = Logger.getLogger(SearcherThread.class.getName());
     private static AtomicInteger threadCount = new AtomicInteger(0);
 
     private Request request;
     private int threadId;
 
-    public WorkerThread() {}
+    public SearcherThread() {}
 
     @EJB
     private CacheService cacheService;
 
-    public WorkerThread(Request request) {
+    public SearcherThread(Request request) {
         this.request = request;
         this.threadId = threadCount.incrementAndGet();
     }

@@ -16,9 +16,9 @@ public class ServiceController {
     private ServiceController() {}
 
     private final Logger log = Logger.getLogger(ServiceController.class.getName());
-    private final int MAX_THREADS = 5;
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(5);
+
     private int requestCount = 1;
-    private final ExecutorService threadPool = Executors.newFixedThreadPool(MAX_THREADS);
 
 
     public int getRequestCount() {
@@ -57,8 +57,8 @@ public class ServiceController {
         return response;
     }
 
-    public synchronized void queueRequest(Request request) {
-        threadPool.submit(new WorkerThread(request));
+    private synchronized void queueRequest(Request request) {
+        threadPool.submit(new SearcherThread(request));
     }
 
 }

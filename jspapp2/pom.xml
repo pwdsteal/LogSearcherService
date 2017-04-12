@@ -98,8 +98,8 @@
                     <configuration>
                         <wsdlUrls>
                             <!--<wsdlUrl>http://192.168.0.209:7001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>-->
-                            <wsdlUrl>http://192.168.0.102:3001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>
-                            <!--<wsdlUrl>http://localhost:7001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>-->
+                            <!--<wsdlUrl>http://192.168.0.102:3001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>-->
+                            <wsdlUrl>http://localhost:7001/LogsSearcherWS/LogsSearcherWSService?WSDL</wsdlUrl>
                         </wsdlUrls>
                         <keep>true</keep>
                         <sourceDestDir>target/generated-sources</sourceDestDir>
